@@ -6,478 +6,219 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Career Agent - AI-Powered Job Search</title>
     <link rel="stylesheet" href="/static/styles.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-</head>
+    <div class="db-info-header">
+        <h3>Database Connection</h3>
+        <span class="db-status" id="dbStatus">Connected</span>
+    </div>
+    <div class="db-info-details">
+        <div class="db-detail">
+            <span class="db-label">Type:</span>
+            <span class="db-value" id="dbType">SQLite</span>
+        </div>
+        <div class="db-detail">
+            <span class="db-label">Total Records:</span>
+            <span class="db-value" id="dbRecords">0</span>
+        </div>
+        <div class="db-detail">
+            <span class="db-label">Last Updated:</span>
+            <span class="db-value" id="dbLastUpdate">Just now</span>
+        </div>
+    </div>
+    </div>
 
-<body>
-    <!-- Header -->
-    <header class="header">
-        <div class="container">
-            <div class="header-content">
-                <div class="logo">
-                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                        <rect width="32" height="32" rx="8" fill="#2557a7" />
-                        <path d="M16 8L24 20H8L16 8Z" fill="white" />
-                        <circle cx="16" cy="22" r="2" fill="white" />
+    <div class="dashboard-grid">
+        <div class="card metric-card">
+            <div class="metric-header">
+                <h3>Jobs Scraped</h3>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <rect x="3" y="3" width="18" height="18" rx="2" stroke="#2557a7" stroke-width="2" />
+                </svg>
+            </div>
+            <div class="metric-value" id="metricJobsScraped">0</div>
+            <div class="metric-change positive" id="metricJobsChange">+0 this week</div>
+        </div>
+        <div class="card metric-card">
+            <div class="metric-header">
+                <h3>Matched Jobs</h3>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M9 11L12 14L22 4" stroke="#10b981" stroke-width="2" stroke-linecap="round" />
+                    <path d="M21 12V19C21 20.1 20.1 21 19 21H5C3.9 21 3 20.1 3 19V5C3 3.9 3.9 3 5 3H16" stroke="#10b981"
+                        stroke-width="2" stroke-linecap="round" />
+                </svg>
+            </div>
+            <div class="metric-value" id="metricMatched">0</div>
+            <div class="metric-change" id="metricMatchRate">0% match rate</div>
+        </div>
+        <div class="card metric-card">
+            <div class="metric-header">
+                <h3>Applications</h3>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M9 12L11 14L15 10" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" />
+                    <rect x="3" y="6" width="18" height="15" rx="2" stroke="#8b5cf6" stroke-width="2" />
+                </svg>
+            </div>
+            <div class="metric-value" id="metricApplications">0</div>
+            <div class="metric-change" id="metricAppSuccess">15% success rate</div>
+        </div>
+        <div class="card metric-card">
+            <div class="metric-header">
+                <h3>Projects Added</h3>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 2L4 6V12C4 16.4 7 20.4 12 22C17 20.4 20 16.4 20 12V6L12 2Z" stroke="#f59e0b"
+                        stroke-width="2" />
+                </svg>
+            </div>
+            <div class="metric-value" id="metricProjects">0</div>
+            <div class="metric-change neutral">Enhanced resumes</div>
+        </div>
+    </div>
+
+    <div class="dashboard-row">
+        <div class="card chart-card">
+            <h3 class="card-title">Match Score Distribution</h3>
+            <div class="chart" id="matchDistChart">
+                <!-- Chart rendered here -->
+            </div>
+        </div>
+        <div class="card">
+            <h3 class="card-title">Application Timeline</h3>
+            <div class="timeline" id="timeline">
+                <!-- Timeline items loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-row">
+        <div class="card">
+            <h3 class="card-title">Top Skills in Demand</h3>
+            <div class="skills-list" id="topSkillsList">
+                <!-- Skills will be loaded here -->
+            </div>
+        </div>
+        <div class="card">
+            <h3 class="card-title">Companies</h3>
+            <div class="companies-list" id="companiesList">
+                <!-- Companies will be loaded here -->
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Monitoring Tab -->
+    <div class="tab-content" id="monitoringTab">
+        <h2 class="tab-title">Continuous Monitoring</h2>
+
+        <div class="monitoring-controls">
+            <div class="card">
+                <h3 class="card-title">Monitoring Status</h3>
+                <div class="status-display">
+                    <div class="status-icon" id="statusIcon">
+                        <div class="pulse-ring"></div>
+                        <div class="pulse-dot"></div>
+                    </div>
+                    <div class="status-text">
+                        <h4 id="monitoringStatus">Inactive</h4>
+                        <p id="monitoringDetail">Not monitoring jobs</p>
+                    </div>
+                </div>
+                <div class="monitoring-actions">
+                    <button class="btn-primary" id="startMonitoringBtn">Start Monitoring</button>
+                    <button class="btn-secondary" id="stopMonitoringBtn" disabled>Stop Monitoring</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">Configuration</h3>
+                <div class="config-form">
+                    <div class="form-group">
+                        <label>Region</label>
+                        <input type="text" id="monitorRegion" value="Remote" class="input-field">
+                    </div>
+                    <div class="form-group">
+                        <label>Role</label>
+                        <input type="text" id="monitorRole" value="Software Engineer" class="input-field">
+                    </div>
+                    <div class="form-group">
+                        <label>Platforms</label>
+                        <div class="checkbox-group">
+                            <label><input type="checkbox" value="LinkedIn" checked> LinkedIn</label>
+                            <label><input type="checkbox" value="Indeed" checked> Indeed</label>
+                            <label><input type="checkbox" value="Glassdoor"> Glassdoor</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Scrape Interval (minutes)</label>
+                        <input type="number" id="monitorInterval" value="60" min="15" class="input-field">
+                    </div>
+                    <button class="btn-secondary" id="saveConfigBtn">Save Configuration</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">Monitoring History</h3>
+            <div class="monitoring-log" id="monitoringLog">
+                <!-- Log entries loaded here -->
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">Email Notifications</h3>
+            <div class="notification-config">
+                <div class="notification-status" id="notificationStatus">
+                    <svg width="20" height="20" fill="currentColor">
+                        <path
+                            d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z" />
                     </svg>
-                    <h1>Career Agent</h1>
-                    <span class="db-indicator" id="dbIndicator">
-                        <span class="db-dot"></span>
-                        <span class="db-text">SQLite</span>
-                    </span>
+                    <span>Not configured</span>
                 </div>
-                <nav class="nav">
-                    <a href="#" class="nav-link active" data-tab="jobs">
-                        <svg width="20" height="20" fill="currentColor">
-                            <rect x="3" y="4" width="14" height="12" rx="2" />
-                        </svg>
-                        Jobs
-                    </a>
-                    <a href="#" class="nav-link" data-tab="saved">
-                        <svg width="20" height="20" fill="currentColor">
-                            <path d="M5 3h10l5 5v11H5V3z" />
-                        </svg>
-                        Saved
-                        <span class="badge" id="savedBadge">0</span>
-                    </a>
-                    <a href="#" class="nav-link" data-tab="applications">
-                        <svg width="20" height="20" fill="currentColor">
-                            <path d="M9 12l2 2 4-4" />
-                            <rect x="3" y="4" width="14" height="14" rx="2" />
-                        </svg>
-                        Applications
-                        <span class="badge" id="appBadge">0</span>
-                    </a>
-                    <a href="#" class="nav-link" data-tab="dashboard">
-                        <svg width="20" height="20" fill="currentColor">
-                            <rect x="3" y="3" width="7" height="7" />
-                            <rect x="12" y="3" width="7" height="7" />
-                            <rect x="3" y="12" width="7" height="7" />
-                            <rect x="12" y="12" width="7" height="7" />
-                        </svg>
-                        Analytics
-                    </a>
-                    <a href="#" class="nav-link" data-tab="monitoring">
-                        <svg width="20" height="20" fill="currentColor">
-                            <circle cx="10" cy="10" r="8" />
-                            <path d="M10 6v4l3 3" />
-                        </svg>
-                        Monitoring
-                        <span class="status-dot" id="monitoringDot"></span>
-                    </a>
-                    <a href="#" class="nav-link" data-tab="resume">
-                        <svg width="20" height="20" fill="currentColor">
-                            <rect x="5" y="2" width="10" height="16" rx="1" />
-                            <path d="M7 6h6M7 9h6M7 12h4" />
-                        </svg>
-                        Resume
-                    </a>
-                </nav>
+                <button class="btn-secondary" id="testNotificationBtn">Send Test Email</button>
             </div>
         </div>
-    </header>
+    </div>
 
-    <!-- Main Content -->
-    <main class="main">
-        <div class="container">
-            <!-- Search Bar -->
-            <div class="search-section" id="searchSection">
-                <div class="search-container">
-                    <div class="search-inputs">
-                        <div class="input-group">
-                            <svg class="input-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                <path
-                                    d="M9 2C5.13 2 2 5.13 2 9C2 12.87 5.13 16 9 16C12.87 16 16 12.87 16 9C16 5.13 12.87 2 9 2Z"
-                                    stroke="#6b7280" stroke-width="2" />
-                                <path d="M14 14L18 18" stroke="#6b7280" stroke-width="2" stroke-linecap="round" />
-                            </svg>
-                            <input type="text" id="roleInput" placeholder="Job title, keywords, or company"
-                                class="search-input">
-                        </div>
-                        <div class="input-group">
-                            <svg class="input-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                <path
-                                    d="M10 9C11.66 9 13 7.66 13 6C13 4.34 11.66 3 10 3C8.34 3 7 4.34 7 6C7 7.66 8.34 9 10 9Z"
-                                    stroke="#6b7280" stroke-width="2" />
-                                <path d="M3 17C3 13.69 5.69 11 9 11H11C14.31 11 17 13.69 17 17" stroke="#6b7280"
-                                    stroke-width="2" />
-                            </svg>
-                            <input type="text" id="locationInput" placeholder="City, state, or remote"
-                                class="search-input">
-                        </div>
-                    </div>
-                    <button class="btn-primary" id="searchBtn">
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                            <path
-                                d="M9 2C5.13 2 2 5.13 2 9C2 12.87 5.13 16 9 16C12.87 16 16 12.87 16 9C16 5.13 12.87 2 9 2Z"
-                                stroke="white" stroke-width="2" />
-                            <path d="M14 14L18 18" stroke="white" stroke-width="2" stroke-linecap="round" />
-                        </svg>
-                        Find Jobs
-                    </button>
+    <!-- Resume Tab -->
+    <div class="tab-content" id="resumeTab">
+        <h2 class="tab-title">Resume Manager</h2>
+        <div class="resume-grid">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Your Resume</h3>
+                    <span class="version-badge">v<span id="resumeVersion">1</span></span>
                 </div>
-
-                <!-- Advanced Filters -->
-                <div class="advanced-filters">
-                    <button class="filter-toggle" id="filterToggle">
+                <textarea id="resumeText" class="resume-textarea" placeholder="Paste your resume here..."></textarea>
+                <div class="resume-actions">
+                    <button class="btn-primary" id="saveResumeBtn">Save Resume</button>
+                    <button class="btn-secondary" id="viewHistoryBtn">View History</button>
+                </div>
+            </div>
+            <div class="card">
+                <h3 class="card-title">Project Discovery</h3>
+                <div class="projects-section">
+                    <input type="text" id="projectKeywords" class="input-field"
+                        placeholder="Enter skills (e.g., Python, React, AWS)">
+                    <button class="btn-secondary" id="searchProjectsBtn">
                         <svg width="16" height="16" fill="currentColor">
-                            <path d="M3 6h14M6 10h8M8 14h4" />
+                            <path
+                                d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 10-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0a4.5 4.5 0 114.5-4.5 4.5 4.5 0 01-4.5 4.5z" />
                         </svg>
-                        Advanced Filters
+                        Search Projects
                     </button>
-                    <div class="filter-panel" id="filterPanel">
-                        <div class="filter-group">
-                            <label>Job Type</label>
-                            <div class="checkbox-group">
-                                <label><input type="checkbox" value="full-time" checked> Full-time</label>
-                                <label><input type="checkbox" value="contract"> Contract</label>
-                                <label><input type="checkbox" value="remote" checked> Remote</label>
-                            </div>
-                        </div>
-                        <div class="filter-group">
-                            <label>Experience Level</label>
-                            <select id="seniorityFilter">
-                                <option value="">All levels</option>
-                                <option value="Junior">Entry Level</option>
-                                <option value="Mid">Mid Level</option>
-                                <option value="Senior">Senior Level</option>
-                            </select>
-                        </div>
-                        <div class="filter-group">
-                            <label>Date Posted</label>
-                            <select id="dateFilter">
-                                <option value="all">Any time</option>
-                                <option value="24h">Last 24 hours</option>
-                                <option value="7d">Last 7 days</option>
-                                <option value="30d">Last 30 days</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Jobs Tab -->
-            <div class="tab-content active" id="jobsTab">
-                <div class="content-layout">
-                    <!-- Sidebar -->
-                    <aside class="sidebar">
-                        <div class="sidebar-card">
-                            <h3>Quick Stats</h3>
-                            <div class="quick-stats">
-                                <div class="quick-stat">
-                                    <span class="stat-number" id="sidebarTotalJobs">0</span>
-                                    <span class="stat-label">Total Jobs</span>
-                                </div>
-                                <div class="quick-stat">
-                                    <span class="stat-number" id="sidebarHighMatch">0</span>
-                                    <span class="stat-label">High Match</span>
-                                </div>
-                                <div class="quick-stat">
-                                    <span class="stat-number" id="sidebarApplied">0</span>
-                                    <span class="stat-label">Applied</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="sidebar-card">
-                            <h3>Filters</h3>
-                            <div class="filter-options">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="excludeScamsFilter" checked>
-                                    <span>Hide potential scams</span>
-                                </label>
-                                <label class="filter-label">
-                                    <span>Minimum Match</span>
-                                    <select id="matchFilter" class="filter-select">
-                                        <option value="0">All matches</option>
-                                        <option value="50">≥ 50%</option>
-                                        <option value="70" selected>≥ 70%</option>
-                                        <option value="80">≥ 80%</option>
-                                        <option value="90">≥ 90%</option>
-                                    </select>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="sidebar-card">
-                            <h3>Top Companies</h3>
-                            <div id="topCompanies" class="company-list">
-                                <!-- Loaded dynamically -->
-                            </div>
-                        </div>
-                    </aside>
-
-                    <!-- Main Content -->
-                    <div class="main-content">
-                        <div class="content-header">
-                            <div class="results-info">
-                                <h2 id="resultsTitle">Recommended Jobs</h2>
-                                <p id="resultsCount">0 jobs found</p>
-                            </div>
-                            <div class="sort-options">
-                                <label>
-                                    Sort by:
-                                    <select id="sortBy">
-                                        <option value="match">Best Match</option>
-                                        <option value="date">Most Recent</option>
-                                        <option value="company">Company</option>
-                                    </select>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="jobs-grid" id="jobsGrid">
-                            <!-- Jobs loaded here -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Saved Jobs Tab -->
-            <div class="tab-content" id="savedTab">
-                <h2 class="tab-title">Saved Jobs</h2>
-                <div class="saved-grid" id="savedGrid">
-                    <!-- Saved jobs loaded here -->
-                </div>
-            </div>
-
-            <!-- Applications Tab -->
-            <div class="tab-content" id="applicationsTab">
-                <h2 class="tab-title">My Applications</h2>
-                <div class="applications-filters">
-                    <button class="filter-btn active" data-status="all">All</button>
-                    <button class="filter-btn" data-status="applied">Applied</button>
-                    <button class="filter-btn" data-status="interview">Interview</button>
-                    <button class="filter-btn" data-status="offer">Offer</button>
-                    <button class="filter-btn" data-status="rejected">Rejected</button>
-                </div>
-                <div class="applications-list" id="applicationsList">
-                    <!-- Applications loaded here -->
-                </div>
-            </div>
-
-            <!-- Dashboard Tab -->
-            <div class="tab-content" id="dashboardTab">
-                <h2 class="tab-title">Analytics Dashboard</h2>
-
-                <!-- Database Info -->
-                <div class="db-info-card">
-                    <div class="db-info-header">
-                        <h3>Database Connection</h3>
-                        <span class="db-status" id="dbStatus">Connected</span>
-                    </div>
-                    <div class="db-info-details">
-                        <div class="db-detail">
-                            <span class="db-label">Type:</span>
-                            <span class="db-value" id="dbType">SQLite</span>
-                        </div>
-                        <div class="db-detail">
-                            <span class="db-label">Total Records:</span>
-                            <span class="db-value" id="dbRecords">0</span>
-                        </div>
-                        <div class="db-detail">
-                            <span class="db-label">Last Updated:</span>
-                            <span class="db-value" id="dbLastUpdate">Just now</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="dashboard-grid">
-                    <div class="card metric-card">
-                        <div class="metric-header">
-                            <h3>Jobs Scraped</h3>
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                <rect x="3" y="3" width="18" height="18" rx="2" stroke="#2557a7" stroke-width="2" />
-                            </svg>
-                        </div>
-                        <div class="metric-value" id="metricJobsScraped">0</div>
-                        <div class="metric-change positive" id="metricJobsChange">+0 this week</div>
-                    </div>
-                    <div class="card metric-card">
-                        <div class="metric-header">
-                            <h3>Matched Jobs</h3>
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                <path d="M9 11L12 14L22 4" stroke="#10b981" stroke-width="2" stroke-linecap="round" />
-                                <path d="M21 12V19C21 20.1 20.1 21 19 21H5C3.9 21 3 20.1 3 19V5C3 3.9 3.9 3 5 3H16"
-                                    stroke="#10b981" stroke-width="2" stroke-linecap="round" />
-                            </svg>
-                        </div>
-                        <div class="metric-value" id="metricMatched">0</div>
-                        <div class="metric-change" id="metricMatchRate">0% match rate</div>
-                    </div>
-                    <div class="card metric-card">
-                        <div class="metric-header">
-                            <h3>Applications</h3>
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                <path d="M9 12L11 14L15 10" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" />
-                                <rect x="3" y="6" width="18" height="15" rx="2" stroke="#8b5cf6" stroke-width="2" />
-                            </svg>
-                        </div>
-                        <div class="metric-value" id="metricApplications">0</div>
-                        <div class="metric-change" id="metricAppSuccess">15% success rate</div>
-                    </div>
-                    <div class="card metric-card">
-                        <div class="metric-header">
-                            <h3>Projects Added</h3>
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                <path d="M12 2L4 6V12C4 16.4 7 20.4 12 22C17 20.4 20 16.4 20 12V6L12 2Z"
-                                    stroke="#f59e0b" stroke-width="2" />
-                            </svg>
-                        </div>
-                        <div class="metric-value" id="metricProjects">0</div>
-                        <div class="metric-change neutral">Enhanced resumes</div>
-                    </div>
-                </div>
-
-                <div class="dashboard-row">
-                    <div class="card chart-card">
-                        <h3 class="card-title">Match Score Distribution</h3>
-                        <div class="chart" id="matchDistChart">
-                            <!-- Chart rendered here -->
-                        </div>
-                    </div>
-                    <div class="card">
-                        <h3 class="card-title">Application Timeline</h3>
-                        <div class="timeline" id="timeline">
-                            <!-- Timeline items loaded here -->
-                        </div>
-                    </div>
-                </div>
-
-                <div class="dashboard-row">
-                    <div class="card">
-                        <h3 class="card-title">Top Skills in Demand</h3>
-                        <div class="skills-list" id="topSkillsList">
-                            <!-- Skills will be loaded here -->
-                        </div>
-                    </div>
-                    <div class="card">
-                        <h3 class="card-title">Companies</h3>
-                        <div class="companies-list" id="companiesList">
-                            <!-- Companies will be loaded here -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Monitoring Tab -->
-            <div class="tab-content" id="monitoringTab">
-                <h2 class="tab-title">Continuous Monitoring</h2>
-
-                <div class="monitoring-controls">
-                    <div class="card">
-                        <h3 class="card-title">Monitoring Status</h3>
-                        <div class="status-display">
-                            <div class="status-icon" id="statusIcon">
-                                <div class="pulse-ring"></div>
-                                <div class="pulse-dot"></div>
-                            </div>
-                            <div class="status-text">
-                                <h4 id="monitoringStatus">Inactive</h4>
-                                <p id="monitoringDetail">Not monitoring jobs</p>
-                            </div>
-                        </div>
-                        <div class="monitoring-actions">
-                            <button class="btn-primary" id="startMonitoringBtn">Start Monitoring</button>
-                            <button class="btn-secondary" id="stopMonitoringBtn" disabled>Stop Monitoring</button>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <h3 class="card-title">Configuration</h3>
-                        <div class="config-form">
-                            <div class="form-group">
-                                <label>Region</label>
-                                <input type="text" id="monitorRegion" value="Remote" class="input-field">
-                            </div>
-                            <div class="form-group">
-                                <label>Role</label>
-                                <input type="text" id="monitorRole" value="Software Engineer" class="input-field">
-                            </div>
-                            <div class="form-group">
-                                <label>Platforms</label>
-                                <div class="checkbox-group">
-                                    <label><input type="checkbox" value="LinkedIn" checked> LinkedIn</label>
-                                    <label><input type="checkbox" value="Indeed" checked> Indeed</label>
-                                    <label><input type="checkbox" value="Glassdoor"> Glassdoor</label>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label>Scrape Interval (minutes)</label>
-                                <input type="number" id="monitorInterval" value="60" min="15" class="input-field">
-                            </div>
-                            <button class="btn-secondary" id="saveConfigBtn">Save Configuration</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <h3 class="card-title">Monitoring History</h3>
-                    <div class="monitoring-log" id="monitoringLog">
-                        <!-- Log entries loaded here -->
-                    </div>
-                </div>
-
-                <div class="card">
-                    <h3 class="card-title">Email Notifications</h3>
-                    <div class="notification-config">
-                        <div class="notification-status" id="notificationStatus">
-                            <svg width="20" height="20" fill="currentColor">
-                                <path
-                                    d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z" />
-                            </svg>
-                            <span>Not configured</span>
-                        </div>
-                        <button class="btn-secondary" id="testNotificationBtn">Send Test Email</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Resume Tab -->
-            <div class="tab-content" id="resumeTab">
-                <h2 class="tab-title">Resume Manager</h2>
-                <div class="resume-grid">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Your Resume</h3>
-                            <span class="version-badge">v<span id="resumeVersion">1</span></span>
-                        </div>
-                        <textarea id="resumeText" class="resume-textarea"
-                            placeholder="Paste your resume here..."></textarea>
-                        <div class="resume-actions">
-                            <button class="btn-primary" id="saveResumeBtn">Save Resume</button>
-                            <button class="btn-secondary" id="viewHistoryBtn">View History</button>
-                        </div>
-                    </div>
-                    <div class="card">
-                        <h3 class="card-title">Project Discovery</h3>
-                        <div class="projects-section">
-                            <input type="text" id="projectKeywords" class="input-field"
-                                placeholder="Enter skills (e.g., Python, React, AWS)">
-                            <button class="btn-secondary" id="searchProjectsBtn">
-                                <svg width="16" height="16" fill="currentColor">
-                                    <path
-                                        d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 10-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0a4.5 4.5 0 114.5-4.5 4.5 4.5 0 01-4.5 4.5z" />
-                                </svg>
-                                Search Projects
-                            </button>
-                            <div class="projects-list" id="projectsList">
-                                <!-- Projects will appear here -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <h3 class="card-title">Resume Versions</h3>
-                    <div class="versions-list" id="versionsList">
-                        <!-- Resume versions loaded here -->
+                    <div class="projects-list" id="projectsList">
+                        <!-- Projects will appear here -->
                     </div>
                 </div>
             </div>
         </div>
+
+        <div class="card">
+            <h3 class="card-title">Resume Versions</h3>
+            <div class="versions-list" id="versionsList">
+                <!-- Resume versions loaded here -->
+            </div>
+        </div>
+    </div>
+    </div>
     </main>
 
     <!-- Job Detail Modal -->
@@ -560,6 +301,6 @@
     </div>
 
     <script src="/static/app.js"></script>
-</body>
+    </body>
 
 </html>

@@ -60,7 +60,7 @@ searchBtn.addEventListener('click', async () => {
             body: JSON.stringify({
                 region: location,
                 role: role,
-                platforms: ['LinkedIn', 'Indeed']
+                platforms: ['Adzuna', 'RemoteOK', 'Indeed']
             })
         });
 
@@ -69,6 +69,7 @@ searchBtn.addEventListener('click', async () => {
         }
     } catch (error) {
         console.error('Search error:', error);
+        alert('Search failed: ' + error.message);
     } finally {
         searchBtn.disabled = false;
         searchBtn.innerHTML = `
@@ -122,9 +123,16 @@ async function loadJobs() {
         }
     } catch (error) {
         console.error('Load jobs error:', error);
-        jobsGrid.innerHTML = '<div class="error">Failed to load jobs</div>';
+        jobsGrid.innerHTML = `<div class="error">Failed to load jobs: ${error.message}</div>`;
     }
 }
+
+
+// Toggle Advanced Filters
+document.getElementById('filterToggle').addEventListener('click', () => {
+    const panel = document.getElementById('filterPanel');
+    panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+});
 
 // Create Job Card
 function createJobCard(job) {
@@ -280,10 +288,46 @@ async function loadDashboard() {
 }
 
 // Resume Functions
-document.getElementById('saveResumeBtn').addEventListener('click', () => {
-    currentResume = document.getElementById('resumeText').value;
-    alert('Resume saved! Use it for match scoring and cover letters.');
+document.getElementById('saveResumeBtn').addEventListener('click', async () => {
+    const content = document.getElementById('resumeText').value;
+
+    try {
+        const response = await fetch(`${API_BASE}/resume/save`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: content })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            currentResume = content;
+            document.getElementById('resumeVersion').textContent = data.version;
+            alert('Resume saved successfully!');
+        } else {
+            alert('Failed to save resume.');
+        }
+    } catch (error) {
+        console.error('Save resume error:', error);
+        alert('Error saving resume.');
+    }
 });
+
+// Load latest resume on startup
+async function loadResume() {
+    try {
+        const response = await fetch(`${API_BASE}/resume/latest`);
+        if (response.ok) {
+            const data = await response.json();
+            if (data.content) {
+                document.getElementById('resumeText').value = data.content;
+                document.getElementById('resumeVersion').textContent = data.version;
+                currentResume = data.content;
+            }
+        }
+    } catch (error) {
+        console.error('Load resume error:', error);
+    }
+}
 
 document.getElementById('searchProjectsBtn').addEventListener('click', async () => {
     const keywords = document.getElementById('projectKeywords').value.split(',').map(k => k.trim());
@@ -337,4 +381,36 @@ function formatDate(dateString) {
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     loadJobs();
+    loadResume();
+
+    // Initialize other buttons
+    const saveJobBtn = document.getElementById('saveJobBtn');
+    if (saveJobBtn) {
+        saveJobBtn.addEventListener('click', () => {
+            // Logic to save job
+            alert('Job saved!');
+        });
+    }
+
+    const startMonitoringBtn = document.getElementById('startMonitoringBtn');
+    if (startMonitoringBtn) {
+        startMonitoringBtn.addEventListener('click', () => {
+            document.getElementById('monitoringStatus').textContent = 'Active';
+            document.getElementById('monitoringDetail').textContent = 'Monitoring jobs every 60 mins';
+            document.getElementById('statusIcon').classList.add('active');
+            startMonitoringBtn.disabled = true;
+            document.getElementById('stopMonitoringBtn').disabled = false;
+        });
+    }
+
+    const stopMonitoringBtn = document.getElementById('stopMonitoringBtn');
+    if (stopMonitoringBtn) {
+        stopMonitoringBtn.addEventListener('click', () => {
+            document.getElementById('monitoringStatus').textContent = 'Inactive';
+            document.getElementById('monitoringDetail').textContent = 'Not monitoring jobs';
+            document.getElementById('statusIcon').classList.remove('active');
+            startMonitoringBtn.disabled = false;
+            stopMonitoringBtn.disabled = true;
+        });
+    }
 });

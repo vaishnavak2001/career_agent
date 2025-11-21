@@ -1,57 +1,44 @@
-"""Simple agent module without LangChain dependency."""
-from typing import Dict, Any
+from langchain.agents import AgentExecutor, create_openai_tools_agent
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from app.tools import job_tools, resume_tools, apply_tools
+from app.config import settings
 
+# 1. Define Tools
+tools = [
+    job_tools.scrape_jobs,
+    job_tools.detect_scam,
+    job_tools.parse_jd,
+    job_tools.compute_match_score,
+    resume_tools.rewrite_resume,
+    resume_tools.add_projects_to_resume,
+    resume_tools.generate_cover_letter,
+    apply_tools.submit_application
+]
+
+# 2. Initialize LLM
+# Fallback to a mock if no key provided, to prevent crash on startup
+if settings.OPENAI_API_KEY:
+    llm = ChatOpenAI(model="gpt-4-turbo", temperature=0, api_key=settings.OPENAI_API_KEY)
+else:
+    # This is just a placeholder to allow import; execution will fail if called without key
+    print("WARNING: OPENAI_API_KEY not found. Agent will not function correctly.")
+    llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0, api_key="sk-mock")
+
+# 3. Create Prompt
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are an Autonomous Career Agent. Your goal is to find, analyze, and apply to jobs. "
+               "Use the available tools to scrape jobs, detect scams, tailor resumes, and submit applications. "
+               "Always check for scams before applying."),
+    ("user", "{input}"),
+    MessagesPlaceholder(variable_name="agent_scratchpad"),
+])
+
+# 4. Create Agent
+agent = create_openai_tools_agent(llm, tools, prompt)
+
+# 5. Create Executor
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
 
 def get_agent_executor():
-    """
-    Creates and returns a mock agent executor.
-    
-    Note: This is a simplified version that doesn't use LangChain.
-    To use the full LLM-powered agent with LangChain:
-    1. Install compatible LangChain version
-    2. Set OPENAI_API_KEY in .env
-    
-    For now, use the individual API endpoints:
-    - POST /jobs/scrape - Scrape jobs
-    - GET /jobs - List jobs
-    - POST /jobs/{id}/analyze - Analyze a job
-    - POST /match-score - Calculate match score
-    - POST /cover-letter/generate - Generate cover letter
-    - GET /dashboard/stats - Get metrics
-    """
-    class MockAgentExecutor:
-        def invoke(self, input_dict: Dict[str, Any]) -> Dict[str, Any]:
-            instruction = input_dict.get("input", "")
-            
-            response = f"""Mock Agent Response
-            
-Received instruction: {instruction}
-
-The autonomous agent is currently in mock mode. To enable full LLM-powered functionality:
-
-1. Install compatible LangChain: pip install langchain==0.1.0 langchain-openai
-2.  Add your OpenAI API key to .env: OPENAI_API_KEY=sk-...
-
-Current Features Available (via REST API):
-✅  Job Scraping: POST /jobs/scrape
-✅ Job Listing: GET /jobs
-✅ Job Analysis: POST /jobs/{{id}}/analyze
-✅ Match Scoring: POST /match-score  
-✅ Cover Letter Generation: POST /cover-letter/generate
-✅ Project Search: POST /projects/search
-✅ Dashboard Analytics: GET /dashboard/stats
-
-Example workflow without agent:
-1. Scrape jobs: POST /jobs/scrape
-2. List jobs: GET /jobs
-3. For each job:
-   - Analyze: POST /jobs/{{id}}/analyze
-   - Calculate match: POST /match-score
-   - If match >= 70: POST /cover-letter/generate
-
-All endpoints are fully functional and can be used independently!
-"""
-            
-            return {"output": response}
-    
-    return MockAgentExecutor()
+    return agent_executor
