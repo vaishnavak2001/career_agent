@@ -1,0 +1,18 @@
+career_agent/
+├── app/
+│   ├── __init__.py
+│   ├── main.py                 # FastAPI entry point & Dashboard endpoints
+│   ├── database.py             # Database connection & Session management
+│   ├── models.py               # SQLAlchemy ORM Models (Schema)
+│   ├── schemas.py              # Pydantic models & Tool JSON Schemas
+│   ├── agent.py                # LangChain Agent setup & Graph definition
+│   ├── tools/
+│   │   ├── __init__.py
+│   │   ├── job_tools.py        # scrape, parse, dedup, scam detection
+│   │   ├── resume_tools.py     # match score, rewrite, project search
+│   │   ├── application_tools.py # cover letter, submit, status
+│   │   └── analytics_tools.py  # dashboard metrics
+├── architecture.md             # Architecture diagram
+├── workflow_example.json       # End-to-end JSON workflow example
+├── requirements.txt            # Python dependencies
+└── README.md                   # Project documentation

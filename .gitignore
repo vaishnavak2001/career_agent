@@ -1,0 +1,95 @@
+# Environment Variables (CRITICAL - Contains API Keys and Passwords)
+.env
+.env.local
+.env.production
+*.env
+!.env.example
+
+# Database Files (Contains Personal Data)
+*.db
+*.sqlite
+*.sqlite3
+career_agent.db
+career_agent_backup.db
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# IDE and Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs and Temporary Files
+*.log
+logs/
+*.tmp
+*.temp
+
+# Testing and Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# Build and Distribution
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Jupyter Notebooks (if used for testing)
+.ipynb_checkpoints/
+*.ipynb
+
+# OS Generated Files
+Thumbs.db
+desktop.ini
+
+# Migration Files (keep tracked but ignore local changes)
+# alembic/versions/*.py
+
+# Backup Files
+*.bak
+*.backup
+
+# Playwright Browser Downloads
+playwright/.local-browsers/
+
+# Antigravity/Gemini AI Generated Files
+.gemini/
+*.webp
+
+# Node modules (if any)
+node_modules/
+
+# Screenshots and Videos
+screenshots/
+recordings/
+*.mp4
+*.webm
+
+# Secret Keys and Certificates
+*.pem
+*.key
+*.cert
+
+# Local Configuration
+local_settings.py
+config.local.py

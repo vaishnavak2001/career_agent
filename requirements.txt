@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+sqlalchemy
+psycopg2-binary
+langchain
+langchain-openai
+pydantic
+beautifulsoup4
+requests
+playwright
+pandas
+APScheduler
+alembic

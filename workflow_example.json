@@ -1,0 +1,131 @@
+{
+  "workflow_name": "End-to-End Job Application Process",
+  "steps": [
+    {
+      "step_id": 1,
+      "action": "scrape_jobs",
+      "input": {
+        "region": "New York",
+        "role": "Senior Backend Engineer",
+        "platforms": ["LinkedIn", "Indeed"]
+      },
+      "output": [
+        {
+          "url": "https://linkedin.com/jobs/view/123456",
+          "title": "Senior Backend Engineer",
+          "company": "FinTech Global",
+          "raw_description": "We are looking for a Python expert with FastAPI and AWS experience..."
+        }
+      ]
+    },
+    {
+      "step_id": 2,
+      "action": "deduplicate_job",
+      "input": {
+        "job_url": "https://linkedin.com/jobs/view/123456",
+        "company": "FinTech Global",
+        "title": "Senior Backend Engineer"
+      },
+      "output": false
+    },
+    {
+      "step_id": 3,
+      "action": "detect_scam",
+      "input": {
+        "job_data": {
+          "company": "FinTech Global",
+          "description": "We are looking for a Python expert..."
+        }
+      },
+      "output": {
+        "is_scam": false,
+        "reason": null
+      }
+    },
+    {
+      "step_id": 4,
+      "action": "parse_jd",
+      "input": {
+        "job_text": "We are looking for a Python expert with FastAPI and AWS experience..."
+      },
+      "output": {
+        "skills": ["Python", "FastAPI", "AWS", "PostgreSQL"],
+        "seniority": "Senior",
+        "keywords": ["high-scale", "distributed systems"]
+      }
+    },
+    {
+      "step_id": 5,
+      "action": "compute_match_score",
+      "input": {
+        "resume_text": "Experienced Python Developer...",
+        "jd_data": {
+          "skills": ["Python", "FastAPI", "AWS", "PostgreSQL"]
+        }
+      },
+      "output": 88.0
+    },
+    {
+      "step_id": 6,
+      "action": "search_projects",
+      "input": {
+        "keywords": ["FastAPI", "AWS", "distributed systems"],
+        "limit": 2
+      },
+      "output": [
+        {
+          "name": "Distributed Task Queue",
+          "source": "GitHub",
+          "url": "https://github.com/user/task-queue"
+        }
+      ]
+    },
+    {
+      "step_id": 7,
+      "action": "add_projects_to_resume",
+      "input": {
+        "base_resume": "Experienced Python Developer...",
+        "projects": [{"name": "Distributed Task Queue", "url": "..."}]
+      },
+      "output": "Experienced Python Developer... \nProjects: Distributed Task Queue..."
+    },
+    {
+      "step_id": 8,
+      "action": "rewrite_resume_to_match_jd",
+      "input": {
+        "resume": "Experienced Python Developer... Projects: Distributed Task Queue...",
+        "jd_data": {"skills": ["Python", "FastAPI", "AWS"]}
+      },
+      "output": "Senior Backend Engineer with deep expertise in Python and FastAPI..."
+    },
+    {
+      "step_id": 9,
+      "action": "generate_cover_letter",
+      "input": {
+        "job_data": {"company": "FinTech Global", "title": "Senior Backend Engineer"},
+        "resume": "Senior Backend Engineer...",
+        "personality": "professional"
+      },
+      "output": "Dear Hiring Manager at FinTech Global, I am writing to express my interest..."
+    },
+    {
+      "step_id": 10,
+      "action": "submit_application",
+      "input": {
+        "url": "https://linkedin.com/jobs/view/123456",
+        "resume_content": "Senior Backend Engineer...",
+        "cover_letter": "Dear Hiring Manager..."
+      },
+      "output": "Success"
+    },
+    {
+      "step_id": 11,
+      "action": "store_application_status",
+      "input": {
+        "job_id": 123,
+        "status": "applied"
+      },
+      "output": "Stored"
+    }
+  ]
+}
