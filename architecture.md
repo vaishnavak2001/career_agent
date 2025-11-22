@@ -1,73 +1,246 @@
-# Autonomous AI Job Application & Career Agent Architecture
+# 🏗️ Career Agent - Complete Architecture
 
-## High-Level Architecture
+## Folder Structure
 
-```mermaid
-graph TD
-    User[User] -->|Config & Resume| API[FastAPI Backend]
-    API -->|Trigger| Agent[LangChain Agent Orchestrator]
-    
-    subgraph "Data Layer"
-        DB[(PostgreSQL)]
-    end
-    
-    subgraph "Agent Tools"
-        Scraper[Job Scraper]
-        Parser[JD Parser]
-        Matcher[Match Scorer]
-        ProjectSearch[Project Search Engine]
-        ResumeWriter[Resume Rewriter]
-        CoverLetter[Cover Letter Generator]
-        ScamDetector[Scam Detector]
-        Submitter[Application Submitter]
-    end
-    
-    Agent -->|1. Scrape| Scraper
-    Scraper -->|Raw Jobs| DB
-    
-    Agent -->|2. Dedup & Scam Check| DB
-    Agent -->|2. Dedup & Scam Check| ScamDetector
-    
-    Agent -->|3. Parse| Parser
-    Parser -->|Structured Data| DB
-    
-    Agent -->|4. Score| Matcher
-    Matcher -->|Score| DB
-    
-    Agent -->|5. Enhance| ProjectSearch
-    ProjectSearch -->|New Projects| DB
-    
-    Agent -->|6. Tailor| ResumeWriter
-    ResumeWriter -->|Tailored Resume| DB
-    
-    Agent -->|7. Draft| CoverLetter
-    CoverLetter -->|Letter| DB
-    
-    Agent -->|8. Apply| Submitter
-    Submitter -->|Status| DB
-    
-    API -->|Query| Dashboard[Analytics Dashboard]
-    Dashboard -->|Read| DB
+```
+career_agent/
+├── .github/
+│   └── workflows/
+│       ├── ci.yml                    # Continuous Integration
+│       ├── deploy-backend.yml        # Backend deployment
+│       └── deploy-frontend.yml       # Frontend deployment
+├── backend/
+│   ├── alembic/                      # Database migrations
+│   │   ├── versions/
+│   │   └── env.py
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── main.py                   # FastAPI app entry
+│   │   ├── config.py                 # Configuration management
+│   │   ├── database.py               # DB connection
+│   │   ├── dependencies.py           # Shared dependencies
+│   │   ├── models/                   # SQLAlchemy models
+│   │   │   ├── __init__.py
+│   │   │   ├── user.py
+│   │   │   ├── job.py
+│   │   │   ├── resume.py
+│   │   │   ├── project.py
+│   │   │   ├── application.py
+│   │   │   └── analytics.py
+│   │   ├── schemas/                  # Pydantic schemas
+│   │   │   ├── __init__.py
+│   │   │   ├── user.py
+│   │   │   ├── job.py
+│   │   │   ├── resume.py
+│   │   │   ├── project.py
+│   │   │   ├── application.py
+│   │   │   └── tool_schemas.py       # Tool calling schemas
+│   │   ├── api/                      # API routes
+│   │   │   ├── __init__.py
+│   │   │   ├── auth.py
+│   │   │   ├── jobs.py
+│   │   │   ├── resumes.py
+│   │   │   ├── applications.py
+│   │   │   ├── analytics.py
+│   │   │   ├── agent.py
+│   │   │   └── websocket.py
+│   │   ├── core/                     # Core business logic
+│   │   │   ├── __init__.py
+│   │   │   ├── security.py           # Auth & encryption
+│   │   │   ├── logging.py            # Logging config
+│   │   │   └── rate_limiter.py       # Rate limiting
+│   │   ├── agent/                    # LangChain agent
+│   │   │   ├── __init__.py
+│   │   │   ├── executor.py           # Agent executor
+│   │   │   ├── prompts.py            # System prompts
+│   │   │   ├── chains.py             # LangChain chains
+│   │   │   └── memory.py             # Conversation memory
+│   │   ├── tools/                    # LangChain tools
+│   │   │   ├── __init__.py
+│   │   │   ├── scraping/
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── scraper.py        # scrape_jobs
+│   │   │   │   ├── linkedin.py
+│   │   │   │   ├── indeed.py
+│   │   │   │   ├── glassdoor.py
+│   │   │   │   └── robots_checker.py
+│   │   │   ├── deduplication.py      # deduplicate_job
+│   │   │   ├── scam_detection.py     # detect_scam
+│   │   │   ├── jd_parser.py          # parse_jd
+│   │   │   ├── match_scorer.py       # compute_match_score
+│   │   │   ├── project_search.py     # search_projects
+│   │   │   ├── resume_builder.py     # add_projects_to_resume
+│   │   │   ├── resume_rewriter.py    # rewrite_resume_to_match_jd
+│   │   │   ├── cover_letter.py       # generate_cover_letter
+│   │   │   ├── form_filler.py        # submit_application
+│   │   │   ├── storage.py            # store_* tools
+│   │   │   └── analytics.py          # dashboard_metrics
+│   │   ├── services/                 # External services
+│   │   │   ├── __init__.py
+│   │   │   ├── email.py              # Email service
+│   │   │   ├── storage.py            # S3-compatible storage
+│   │   │   ├── webhooks.py           # Webhook delivery
+│   │   │   ├── github_api.py         # GitHub integration
+│   │   │   ├── linkedin_api.py       # LinkedIn OAuth
+│   │   │   └── captcha_handler.py    # CAPTCHA prompt
+│   │   ├── scheduler/                # Background jobs
+│   │   │   ├── __init__.py
+│   │   │   ├── jobs.py               # APScheduler jobs
+│   │   │   └── tasks.py              # Celery tasks (optional)
+│   │   └── utils/                    # Utilities
+│   │       ├── __init__.py
+│   │       ├── embeddings.py         # Vector embeddings
+│   │       ├── ats_simulator.py      # ATS scoring
+│   │       ├── content_hashing.py    # Fingerprinting
+│   │       └── validators.py         # Input validation
+│   ├── tests/
+│   │   ├── __init__.py
+│   │   ├── conftest.py
+│   │   ├── test_tools/
+│   │   ├── test_api/
+│   │   └── test_agent/
+│   ├── scripts/
+│   │   ├── setup.sh                  # Initial setup
+│   │   ├── migrate.sh                # Run migrations
+│   │   └── seed.py                   # Seed database
+│   ├── requirements.txt
+│   ├── requirements-dev.txt
+│   ├── Dockerfile
+│   ├── .env.example
+│   └── alembic.ini
+├── frontend/
+│   ├── public/
+│   │   ├── index.html
+│   │   ├── robots.txt
+│   │   └── favicon.ico
+│   ├── src/
+│   │   ├── App.jsx
+│   │   ├── main.jsx
+│   │   ├── index.css
+│   │   ├── components/
+│   │   │   ├── layout/
+│   │   │   │   ├── Header.jsx
+│   │   │   │   ├── Sidebar.jsx
+│   │   │   │   └── Footer.jsx
+│   │   │   ├── jobs/
+│   │   │   │   ├── JobCard.jsx       # Indeed-style card
+│   │   │   │   ├── JobList.jsx       # Infinite scroll
+│   │   │   │   ├── JobDetail.jsx     # Detail modal
+│   │   │   │   ├── JobFilters.jsx    # Search filters
+│   │   │   │   └── MatchScoreBadge.jsx
+│   │   │   ├── dashboard/
+│   │   │   │   ├── Dashboard.jsx
+│   │   │   │   ├── MetricCard.jsx
+│   │   │   │   ├── Charts.jsx
+│   │   │   │   └── Timeline.jsx
+│   │   │   ├── resume/
+│   │   │   │   ├── ResumeEditor.jsx
+│   │   │   │   ├── ResumePreview.jsx
+│   │   │   │   ├── ATSPreview.jsx
+│   │   │   │   └── VersionHistory.jsx
+│   │   │   ├── projects/
+│   │   │   │   ├── ProjectSearch.jsx
+│   │   │   │   ├── ProjectCard.jsx
+│   │   │   │   └── ProjectSelector.jsx
+│   │   │   ├── applications/
+│   │   │   │   ├── ApplicationList.jsx
+│   │   │   │   ├── ApplicationDetail.jsx
+│   │   │   │   └── StatusTracker.jsx
+│   │   │   ├── settings/
+│   │   │   │   ├── Settings.jsx
+│   │   │   │   ├── Preferences.jsx
+│   │   │   │   ├── Integrations.jsx
+│   │   │   │   └── Security.jsx
+│   │   │   └── common/
+│   │   │       ├── Button.jsx
+│   │   │       ├── Modal.jsx
+│   │   │       ├── Input.jsx
+│   │   │       ├── Dropdown.jsx
+│   │   │       └── Notification.jsx
+│   │   ├── hooks/
+│   │   │   ├── useAuth.js
+│   │   │   ├── useJobs.js
+│   │   │   ├── useWebSocket.js
+│   │   │   └── useInfiniteScroll.js
+│   │   ├── services/
+│   │   │   ├── api.js               # Axios instance
+│   │   │   ├── auth.js              # Auth service
+│   │   │   ├── jobs.js              # Jobs API
+│   │   │   └── websocket.js         # WebSocket client
+│   │   ├── utils/
+│   │   │   ├── formatters.js
+│   │   │   ├── validators.js
+│   │   │   └── constants.js
+│   │   └── store/                   # State management (optional)
+│   │       └── index.js
+│   ├── package.json
+│   ├── vite.config.js
+│   ├── tailwind.config.js
+│   ├── postcss.config.js
+│   ├── .env.example
+│   └── Dockerfile
+├── infrastructure/
+│   ├── terraform/                   # Infrastructure as Code
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   └── outputs.tf
+│   ├── docker-compose.yml           # Local development
+│   ├── docker-compose.prod.yml      # Production
+│   └── k8s/                         # Kubernetes (optional)
+│       ├── deployment.yaml
+│       └── service.yaml
+├── docs/
+│   ├── API.md                       # API documentation
+│   ├── ARCHITECTURE.md              # This file
+│   ├── DEPLOYMENT.md                # Deployment guide
+│   ├── DEVELOPMENT.md               # Dev setup guide
+│   ├── TOOLS.md                     # Tool calling reference
+│   └── LEGAL.md                     # Legal & ethics
+├── .gitignore
+├── .env.example
+├── README.md
+├── LICENSE
+└── CONTRIBUTING.md
 ```
 
-## Component Breakdown
+## Technology Stack
 
-1.  **FastAPI Backend**: Serves as the entry point for the user to configure the agent (region, role, resume) and view the dashboard. It triggers the background agent workflows.
-2.  **PostgreSQL Database**: The central source of truth. Stores job listings, parsed data, match scores, project metadata, generated resumes/cover letters, and application statuses.
-3.  **LangChain Agent**: The brain of the operation. It follows a cyclic graph or a linear chain to process jobs from scraping to application. It utilizes an LLM (e.g., GPT-4, Claude 3.5) to make decisions and call tools.
-4.  **Tools**:
-    *   **Scraping**: Python scripts (Selenium/Playwright/BeautifulSoup) to fetch jobs.
-    *   **Analysis**: LLM-based parsing and scoring.
-    *   **Content Generation**: LLM-based resume rewriting and cover letter generation.
-    *   **External Search**: APIs (GitHub, Arxiv) or scraping to find relevant projects.
-    *   **Submission**: Browser automation to fill forms.
+### Backend
+- **Framework**: FastAPI 0.109+
+- **Agent**: LangChain 0.1+
+- **Database**: PostgreSQL 15+ (Neon/Supabase free tier)
+- **ORM**: SQLAlchemy 2.0+ (async)
+- **Migrations**: Alembic
+- **LLM**: OpenAI GPT-4 / Anthropic Claude / Google Gemini
+- **Browser Automation**: Playwright 1.40+
+- **Task Queue**: APScheduler (or Celery for production)
+- **Authentication**: OAuth2 + JWT
+- **Email**: SendGrid / Mailgun (free tier)
+- **Storage**: Supabase Storage / S3-compatible
 
-## Data Flow
+### Frontend
+- **Framework**: React 18+ with Vite
+- **Styling**: Tailwind CSS 3+
+- **State**: React Context / Zustand
+- **HTTP Client**: Axios
+- **WebSocket**: Socket.io-client
+- **Charts**: Recharts / Chart.js
+- **Forms**: React Hook Form
+- **Routing**: React Router v6
 
-1.  **Ingestion**: Jobs are scraped and stored in `jobs` table.
-2.  **Filtering**: Deduplication checks `jobs` table. Scam detection analyzes text/metadata.
-3.  **Processing**: Valid jobs are parsed. Match score is calculated.
-4.  **Enhancement**: If match > threshold, relevant projects are fetched and added to a temporary resume context.
-5.  **Generation**: Resume is rewritten. Cover letter is generated.
-6.  **Action**: Application is submitted. Status is updated in `applications` table.
-7.  **Monitoring**: Dashboard queries `jobs` and `applications` tables for real-time stats.
+### DevOps
+- **CI/CD**: GitHub Actions
+- **Containerization**: Docker
+- **Backend Hosting**: Railway / Render / Fly.io (free tier)
+- **Frontend Hosting**: Vercel / Netlify (free tier)
+- **Monitoring**: Sentry (free tier)
+- **Analytics**: PostHog (free tier, optional)
+
+## Core Principles
+
+1. **Ethics First**: Never fabricate, always transparent, user consent
+2. **Legal Compliance**: robots.txt, ToS, rate limiting, CAPTCHA respect
+3. **Privacy**: PII encrypted, user data deletion, GDPR-ready
+4. **Scalability**: Async operations, queue-based processing
+5. **Observability**: Comprehensive logging, metrics, alerts
+6. **User Control**: Sandbox mode, manual approval, opt-in/out

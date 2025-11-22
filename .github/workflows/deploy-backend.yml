@@ -1,0 +1,120 @@
+name: Deploy Backend
+
+on:
+  workflow_run:
+    workflows: ["CI/CD Pipeline"]
+    types:
+      - completed
+    branches: [main]
+
+env:
+  RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+  RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+jobs:
+  deploy-backend:
+    name: Deploy Backend to Railway
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+      
+      - name: Deploy to Railway
+        run: |
+          cd backend
+          railway up --service backend
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      
+      - name: Run database migrations
+        run: |
+          railway run -s backend alembic upgrade head
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      
+      - name: Health check
+        run: |
+          # Wait for deployment to be ready
+          sleep 30
+          
+          # Get the deployment URL
+          BACKEND_URL=$(railway status -s backend --json | jq -r '.deployments[0].url')
+          
+          # Check health endpoint
+          curl -f "$BACKEND_URL/api/health" || exit 1
+      
+      - name: Notify deployment success
+        if: success()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          custom_payload: |
+            {
+              text: "✅ Backend deployed successfully to Railway",
+              attachments: [{
+                color: 'good',
+                text: `Commit: ${process.env.AS_COMMIT}\nAuthor: ${process.env.AS_AUTHOR}`
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      
+      - name: Notify deployment failure
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          custom_payload: |
+            {
+              text: "❌ Backend deployment failed",
+              attachments: [{
+                color: 'danger',
+                text: `Commit: ${process.env.AS_COMMIT}\nAuthor: ${process.env.AS_AUTHOR}`
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  
+  # =====================================================
+  # ALTERNATIVE: Deploy to Render
+  # =====================================================
+  deploy-to-render:
+    name: Deploy to Render (Alternative)
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' && vars.DEPLOY_TARGET == 'render' }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Deploy to Render
+        uses: johnbeynon/render-deploy-action@v0.0.8
+        with:
+          service-id: ${{ secrets.RENDER_SERVICE_ID }}
+          api-key: ${{ secrets.RENDER_API_KEY }}
+  
+  # =====================================================
+  # ALTERNATIVE: Deploy to Fly.io
+  # =====================================================
+  deploy-to-fly:
+    name: Deploy to Fly.io (Alternative)
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' && vars.DEPLOY_TARGET == 'fly' }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Fly
+        uses: superfly/flyctl-actions/setup-flyctl@master
+      
+      - name: Deploy to Fly.io
+        run: flyctl deploy --remote-only
+        working-directory: ./backend
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

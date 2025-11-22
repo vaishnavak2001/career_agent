@@ -1,12 +1,14 @@
 from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any
 
-from app.database import engine, Base, get_db
-from app.models import Job, Application, DailyMetric
+from app.database import engine, get_db
+from app.models import Job, Application, DailyMetric, Base
 from app.agent import get_agent_executor
-from app.tools.job_tools import scrape_jobs
+# from app.tools.job_tools import scrape_jobs  # Temporarily disabled
 
 # Create DB tables
 Base.metadata.create_all(bind=engine)
@@ -22,8 +24,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/")
+# Mount static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.get("/", response_class=HTMLResponse)
 def read_root():
+    # Serve the main HTML file
+    with open("static/index.html", "r", encoding="utf-8") as f:
+        return f.read()
+
+@app.get("/api")
+def api_root():
     return {"status": "online", "service": "Career Agent API"}
 
 @app.get("/jobs")
@@ -46,10 +57,8 @@ def trigger_scrape(region: str, role: str, background_tasks: BackgroundTasks):
     """
     Manually trigger a scrape job (runs in background or immediately via tool).
     """
-    # For simplicity, calling the tool function directly here, 
-    # but in production this should be an async task.
-    jobs = scrape_jobs.invoke({"region": region, "role": role})
-    return {"message": f"Scraped {len(jobs)} jobs", "jobs": jobs}
+    # Temporarily disabled while dependencies are being installed
+    return {"message": "Job scraping is being set up. Please complete dependency installation.", "jobs": []}
 
 @app.get("/dashboard/stats")
 def get_stats(db: Session = Depends(get_db)):
