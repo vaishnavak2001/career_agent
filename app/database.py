@@ -1,6 +1,9 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
 from app.config import settings
+
+Base = declarative_base()
 
 # Use SQLite for local dev if DATABASE_URL not set, otherwise Postgres
 SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL

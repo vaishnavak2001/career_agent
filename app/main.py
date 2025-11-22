@@ -5,8 +5,8 @@ from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any
 
-from app.database import engine, get_db
-from app.models import Job, Application, DailyMetric, Base
+from app.database import engine, get_db, Base
+from app.models import Job, Application, DailyMetric
 from app.agent import get_agent_executor
 # from app.tools.job_tools import scrape_jobs  # Temporarily disabled
 

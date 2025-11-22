@@ -9,11 +9,10 @@ services:
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /
     envVars:
-      # Database connection (from Render PostgreSQL)
+      # Database connection (External - Supabase/Neon)
       - key: DATABASE_URL
-        fromDatabase:
-          name: career-agent-db
-          property: connectionString
+        sync: false
+
       
       # Job API Keys (set these in Render dashboard)
       - key: ADZUNA_API_ID
@@ -45,11 +44,4 @@ services:
       - key: PYTHON_VERSION
         value: 3.11.0
 
-databases:
-  # PostgreSQL Database
-  - name: career-agent-db
-    databaseName: career_agent
-    user: career_agent_user
-    plan: free  # Note: Free for 90 days, then $7/month
-    region: oregon  # Match web service region
-    postgresMajorVersion: 15
+

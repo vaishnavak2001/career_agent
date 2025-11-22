@@ -1,10 +1,10 @@
 from sqlalchemy import Column, Integer, String, Text, Boolean, Float, DateTime, ForeignKey, JSON, Enum
-from sqlalchemy.ext.declarative import declarative_base
+
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import enum
 
-Base = declarative_base()
+from app.database import Base
 
 class JobStatus(str, enum.Enum):
     SCRAPED = "scraped"
