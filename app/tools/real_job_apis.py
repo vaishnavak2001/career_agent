@@ -85,7 +85,7 @@ class AdzunaAPI:
             logger.error(f"Adzuna API error: {e}")
             return []
     
-    def _parse_adzuna_job(self, result: Dict) -> Dict[str, Any]:
+    def _parse_adzuna_job(self, result: Dict[str, Any]) -> Dict[str, Any]:
         """Parse Adzuna API response into standardized format"""
         return {
             "url": result.get("redirect_url"),
@@ -160,7 +160,7 @@ class RemoteOKAPI:
             logger.error(f"RemoteOK API error: {e}")
             return []
     
-    def _parse_remoteok_job(self, result: Dict) -> Dict[str, Any]:
+    def _parse_remoteok_job(self, result: Dict[str, Any]) -> Dict[str, Any]:
         """Parse RemoteOK API response into standardized format"""
         try:
             # Handle different date formats (int timestamp or string)
