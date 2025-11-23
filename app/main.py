@@ -21,5 +21,12 @@ if settings.BACKEND_CORS_ORIGINS:
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
 @app.get("/")
+@app.head("/")
 def root():
     return {"message": "Welcome to the Autonomous AI Job Application Agent API"}
+
+@app.get("/health")
+@app.head("/health")
+def health_check():
+    """Health check endpoint for monitoring services."""
+    return {"status": "healthy", "service": "Career Agent API"}
