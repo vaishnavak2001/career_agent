@@ -1,0 +1,735 @@
+{
+    "tool_schemas": [
+        {
+            "name": "scrape_jobs",
+            "description": "Scrapes job listings from specified platforms for a given role and region",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "role": {
+                        "type": "string",
+                        "description": "The job role to search for (e.g., 'Software Engineer')"
+                    },
+                    "region": {
+                        "type": "string",
+                        "description": "The location to search in (e.g., 'San Francisco', 'Remote')"
+                    },
+                    "platforms": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "List of platforms to scrape (e.g., ['indeed', 'linkedin', 'glassdoor'])"
+                    },
+                    "since_timestamp": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Optional timestamp to filter jobs posted after this time"
+                    }
+                },
+                "required": [
+                    "role",
+                    "region",
+                    "platforms"
+                ]
+            },
+            "returns": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "title": {
+                            "type": "string"
+                        },
+                        "company": {
+                            "type": "string"
+                        },
+                        "location": {
+                            "type": "string"
+                        },
+                        "url": {
+                            "type": "string"
+                        },
+                        "source": {
+                            "type": "string"
+                        },
+                        "posted_date": {
+                            "type": "string",
+                            "format": "date-time"
+                        },
+                        "raw_text": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "name": "deduplicate_job",
+            "description": "Checks if a job has already been processed using URL, company+role+date, and content hash strategies",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "job_record": {
+                        "type": "object",
+                        "properties": {
+                            "url": {
+                                "type": "string"
+                            },
+                            "company": {
+                                "type": "string"
+                            },
+                            "title": {
+                                "type": "string"
+                            },
+                            "posted_date": {
+                                "type": "string"
+                            },
+                            "raw_text": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "url",
+                            "company",
+                            "title"
+                        ]
+                    }
+                },
+                "required": [
+                    "job_record"
+                ]
+            },
+            "returns": {
+                "type": "boolean",
+                "description": "True if duplicate (skip), False if new"
+            }
+        },
+        {
+            "name": "detect_scam",
+            "description": "Analyzes a job record to detect potential scams using heuristics",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "job_record": {
+                        "type": "object",
+                        "properties": {
+                            "title": {
+                                "type": "string"
+                            },
+                            "company": {
+                                "type": "string"
+                            },
+                            "raw_text": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "raw_text"
+                        ]
+                    }
+                },
+                "required": [
+                    "job_record"
+                ]
+            },
+            "returns": {
+                "type": "object",
+                "properties": {
+                    "is_scam": {
+                        "type": "boolean"
+                    },
+                    "score": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 100
+                    },
+                    "flags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "name": "parse_jd",
+            "description": "Parses raw job description into structured data extracting skills, salary, requirements",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "job_text": {
+                        "type": "string",
+                        "description": "Raw job description text"
+                    }
+                },
+                "required": [
+                    "job_text"
+                ]
+            },
+            "returns": {
+                "type": "object",
+                "properties": {
+                    "required_skills": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "preferred_skills": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "responsibilities": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "salary_min": {
+                        "type": "number"
+                    },
+                    "salary_max": {
+                        "type": "number"
+                    },
+                    "salary_currency": {
+                        "type": "string"
+                    },
+                    "experience_min_years": {
+                        "type": "number"
+                    },
+                    "experience_max_years": {
+                        "type": "number"
+                    },
+                    "education_required": {
+                        "type": "string"
+                    },
+                    "seniority_level": {
+                        "type": "string"
+                    },
+                    "location": {
+                        "type": "string"
+                    },
+                    "visa_sponsorship": {
+                        "type": "boolean"
+                    }
+                }
+            }
+        },
+        {
+            "name": "compute_match_score",
+            "description": "Computes a comprehensive match score (0-100) using multiple factors",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "resume": {
+                        "type": "string",
+                        "description": "User's resume content"
+                    },
+                    "structured_jd": {
+                        "type": "object",
+                        "description": "Parsed job description"
+                    },
+                    "projects": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        },
+                        "description": "List of user projects"
+                    }
+                },
+                "required": [
+                    "resume",
+                    "structured_jd",
+                    "projects"
+                ]
+            },
+            "returns": {
+                "type": "object",
+                "properties": {
+                    "score": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 100
+                    },
+                    "breakdown": {
+                        "type": "object",
+                        "properties": {
+                            "required_skills_score": {
+                                "type": "integer"
+                            },
+                            "preferred_skills_score": {
+                                "type": "integer"
+                            },
+                            "project_alignment_score": {
+                                "type": "integer"
+                            },
+                            "experience_score": {
+                                "type": "integer"
+                            },
+                            "education_score": {
+                                "type": "integer"
+                            },
+                            "keyword_density_score": {
+                                "type": "integer"
+                            },
+                            "ats_simulation_score": {
+                                "type": "integer"
+                            }
+                        }
+                    },
+                    "matched_skills": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "missing_skills": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "name": "search_projects",
+            "description": "Searches for relevant projects across GitHub, HuggingFace, Kaggle, ArXiv",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "jd_keywords": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Keywords from job description to search for"
+                    }
+                },
+                "required": [
+                    "jd_keywords"
+                ]
+            },
+            "returns": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "title": {
+                            "type": "string"
+                        },
+                        "description": {
+                            "type": "string"
+                        },
+                        "tech_stack": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "link": {
+                            "type": "string"
+                        },
+                        "source": {
+                            "type": "string",
+                            "enum": [
+                                "github",
+                                "huggingface",
+                                "kaggle",
+                                "arxiv",
+                                "custom"
+                            ]
+                        },
+                        "stars": {
+                            "type": "integer"
+                        },
+                        "reason_matched": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "name": "add_projects_to_resume",
+            "description": "Adds selected projects to the resume and returns metadata",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "base_resume": {
+                        "type": "string",
+                        "description": "Original resume content"
+                    },
+                    "selected_projects": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        },
+                        "description": "Projects to add"
+                    }
+                },
+                "required": [
+                    "base_resume",
+                    "selected_projects"
+                ]
+            },
+            "returns": {
+                "type": "object",
+                "properties": {
+                    "new_resume": {
+                        "type": "string"
+                    },
+                    "project_metadata": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "title": {
+                                    "type": "string"
+                                },
+                                "tech_stack": {
+                                    "type": "array"
+                                },
+                                "link": {
+                                    "type": "string"
+                                },
+                                "reason_matched": {
+                                    "type": "string"
+                                },
+                                "autogenerated": {
+                                    "type": "boolean"
+                                },
+                                "date_added": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "name": "store_project_metadata",
+            "description": "Stores project metadata in the database",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "project_record": {
+                        "type": "object",
+                        "properties": {
+                            "user_id": {
+                                "type": "integer"
+                            },
+                            "job_id": {
+                                "type": "integer"
+                            },
+                            "title": {
+                                "type": "string"
+                            },
+                            "description": {
+                                "type": "string"
+                            },
+                            "tech_stack": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "link": {
+                                "type": "string"
+                            },
+                            "autogenerated": {
+                                "type": "boolean"
+                            },
+                            "metadata_json": {
+                                "type": "object"
+                            }
+                        },
+                        "required": [
+                            "user_id",
+                            "title",
+                            "description",
+                            "tech_stack"
+                        ]
+                    }
+                },
+                "required": [
+                    "project_record"
+                ]
+            },
+            "returns": {
+                "type": "boolean",
+                "description": "True if successful"
+            }
+        },
+        {
+            "name": "rewrite_resume_to_match_jd",
+            "description": "Tailors resume to match job description while maintaining honesty",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "resume": {
+                        "type": "string",
+                        "description": "Base resume"
+                    },
+                    "structured_jd": {
+                        "type": "object",
+                        "description": "Parsed job description"
+                    }
+                },
+                "required": [
+                    "resume",
+                    "structured_jd"
+                ]
+            },
+            "returns": {
+                "type": "string",
+                "description": "Tailored resume text"
+            }
+        },
+        {
+            "name": "generate_cover_letter",
+            "description": "Generates a personalized cover letter with selected personality",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "job_data": {
+                        "type": "object",
+                        "properties": {
+                            "title": {
+                                "type": "string"
+                            },
+                            "company": {
+                                "type": "string"
+                            },
+                            "description": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "title",
+                            "company"
+                        ]
+                    },
+                    "tailored_resume": {
+                        "type": "string",
+                        "description": "The tailored resume"
+                    },
+                    "personality": {
+                        "type": "string",
+                        "enum": [
+                            "professional",
+                            "friendly",
+                            "technical",
+                            "direct",
+                            "creative",
+                            "relocation_friendly"
+                        ],
+                        "description": "Cover letter personality type"
+                    }
+                },
+                "required": [
+                    "job_data",
+                    "tailored_resume",
+                    "personality"
+                ]
+            },
+            "returns": {
+                "type": "string",
+                "description": "Generated cover letter text"
+            }
+        },
+        {
+            "name": "submit_application",
+            "description": "Submits job application using browser automation",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "job_url": {
+                        "type": "string",
+                        "format": "uri",
+                        "description": "URL of job application page"
+                    },
+                    "form_data": {
+                        "type": "object",
+                        "properties": {
+                            "full_name": {
+                                "type": "string"
+                            },
+                            "email": {
+                                "type": "string",
+                                "format": "email"
+                            },
+                            "phone": {
+                                "type": "string"
+                            },
+                            "linkedin": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "full_name",
+                            "email"
+                        ]
+                    },
+                    "files": {
+                        "type": "object",
+                        "properties": {
+                            "resume": {
+                                "type": "string"
+                            },
+                            "cover_letter": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "resume"
+                        ]
+                    }
+                },
+                "required": [
+                    "job_url",
+                    "form_data",
+                    "files"
+                ]
+            },
+            "returns": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "submitted",
+                            "failed",
+                            "captcha_required",
+                            "manual_intervention"
+                        ]
+                    },
+                    "confirmation": {
+                        "type": "string"
+                    },
+                    "screenshot": {
+                        "type": "string"
+                    },
+                    "submitted_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "error_message": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        {
+            "name": "store_application_status",
+            "description": "Logs application status to database",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "job_id": {
+                        "type": "integer",
+                        "description": "Job ID"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "draft",
+                            "pending_approval",
+                            "approved",
+                            "submitted",
+                            "interview_scheduled",
+                            "interview_completed",
+                            "offer_received",
+                            "offer_accepted",
+                            "offer_declined",
+                            "rejected",
+                            "withdrawn"
+                        ],
+                        "description": "Application status"
+                    },
+                    "metadata": {
+                        "type": "object",
+                        "description": "Additional metadata (confirmation, screenshots, etc.)"
+                    }
+                },
+                "required": [
+                    "job_id",
+                    "status"
+                ]
+            },
+            "returns": {
+                "type": "boolean",
+                "description": "True if successful"
+            }
+        },
+        {
+            "name": "dashboard_metrics",
+            "description": "Returns aggregated analytics metrics for the dashboard",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "user_id": {
+                        "type": "integer",
+                        "description": "Optional user ID to filter metrics"
+                    },
+                    "date_from": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Optional start date for metrics"
+                    },
+                    "date_to": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Optional end date for metrics"
+                    }
+                }
+            },
+            "returns": {
+                "type": "object",
+                "properties": {
+                    "total_scraped": {
+                        "type": "integer"
+                    },
+                    "total_matched": {
+                        "type": "integer"
+                    },
+                    "total_applied": {
+                        "type": "integer"
+                    },
+                    "scams_detected": {
+                        "type": "integer"
+                    },
+                    "duplicates_avoided": {
+                        "type": "integer"
+                    },
+                    "avg_match_score": {
+                        "type": "number"
+                    },
+                    "top_skills": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "skill": {
+                                    "type": "string"
+                                },
+                                "count": {
+                                    "type": "integer"
+                                }
+                            }
+                        }
+                    },
+                    "application_success_rate": {
+                        "type": "number"
+                    }
+                }
+            }
+        }
+    ]
+}
