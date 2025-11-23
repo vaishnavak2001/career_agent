@@ -21,11 +21,21 @@ const JobListing = () => {
         loadJobs();
     }, [filters]);
 
-    const loadJobs = async () => {
+    const loadJobs = async (shouldScrape = false) => {
         try {
             setLoading(true);
+
+            if (shouldScrape && filters.keyword && filters.location) {
+                try {
+                    // Trigger scrape first
+                    await api.triggerScrape(filters.location, filters.keyword);
+                } catch (err) {
+                    console.error("Scraping failed, fetching existing jobs:", err);
+                }
+            }
+
             const response = await api.getJobs(filters);
-            setJobs(response.data);
+            setJobs(response.data || response); // Handle if response is array or object with data
         } catch (error) {
             console.error('Error loading jobs:', error);
         } finally {
@@ -76,7 +86,7 @@ const JobListing = () => {
                                 />
                             </div>
                             <button
-                                onClick={loadJobs}
+                                onClick={() => loadJobs(true)}
                                 className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-md font-semibold transition-colors"
                             >
                                 Find Jobs

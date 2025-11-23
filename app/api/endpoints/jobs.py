@@ -32,35 +32,12 @@ def read_jobs(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
 @router.post("/scrape")
 async def trigger_scrape(region: str, role: str, db: Session = Depends(get_db)):
     """
-    Trigger a job scraping task.
+    Trigger a job scraping task using the unified agent tool (Adzuna + Scraper).
     """
-    from app.services.scraper import scraper_service
-    from app.services.parser import parser_service
+    from app.agent.tools import scrape_jobs
     
-    jobs_data = await scraper_service.scrape_jobs(role, region, ["indeed"])
+    # Call the tool directly
+    # Note: The tool handles DB saving internally
+    result = await scrape_jobs(role=role, region=region, platforms=["indeed", "linkedin"])
     
-    saved_count = 0
-    for job_data in jobs_data:
-        # Check if job exists
-        existing = db.query(Job).filter(Job.url == job_data["url"]).first()
-        if not existing:
-            # Parse JD (mocking raw text for now as scraper doesn't return full text yet)
-            # In real impl, scraper should return raw_text
-            raw_text = f"{job_data['title']} at {job_data['company']}. {job_data.get('description', '')}"
-            parsed_data = parser_service.parse_job_description(raw_text)
-            
-            job = Job(
-                title=job_data["title"],
-                company=job_data["company"],
-                location=job_data["location"],
-                url=job_data["url"],
-                source=job_data["source"],
-                posted_date=datetime.utcnow(),
-                raw_text=raw_text,
-                parsed_data=parsed_data
-            )
-            db.add(job)
-            saved_count += 1
-    
-    db.commit()
-    return {"message": f"Scraping completed. Found {len(jobs_data)} jobs, saved {saved_count} new jobs."}
+    return result
