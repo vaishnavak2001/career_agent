@@ -1,131 +1,277 @@
 {
-  "workflow_name": "End-to-End Job Application Process",
-  "steps": [
+  "workflow": {
+    "name": "Job Application Workflow Example",
+    "description": "End-to-end example of processing a job listing",
+    "timestamp": "2024-01-15T10:30:00Z"
+  },
+  "sample_job": {
+    "id": 12345,
+    "source": "indeed",
+    "url": "https://www.indeed.com/viewjob?jk=abc123",
+    "title": "Senior Software Engineer",
+    "company": "TechCorp Inc",
+    "location": "San Francisco, CA",
+    "is_remote": false,
+    "posted_date": "2024-01-14T08:00:00Z",
+    "raw_text": "We are looking for a Senior Software Engineer with 5+ years Python experience. Must have FastAPI, React, PostgreSQL skills. Preferred: AWS, Docker, CI/CD. Responsibilities include building scalable APIs, mentoring junior developers. Salary: $140k-$180k.",
+    "external_id": "abc123"
+  },
+  "actions": [
     {
-      "step_id": 1,
-      "action": "scrape_jobs",
+      "step": 1,
+      "tool": "scrape_jobs",
       "input": {
-        "region": "New York",
-        "role": "Senior Backend Engineer",
-        "platforms": ["LinkedIn", "Indeed"]
+        "role": "Software Engineer",
+        "region": "San Francisco",
+        "platforms": ["indeed"],
+        "since_timestamp": "2024-01-14T00:00:00Z"
       },
-      "output": [
-        {
-          "url": "https://linkedin.com/jobs/view/123456",
-          "title": "Senior Backend Engineer",
-          "company": "FinTech Global",
-          "raw_description": "We are looking for a Python expert with FastAPI and AWS experience..."
-        }
-      ]
+      "output": {
+        "jobs_found": 15,
+        "sample_included": true
+      }
     },
     {
-      "step_id": 2,
-      "action": "deduplicate_job",
+      "step": 2,
+      "tool": "deduplicate_job",
       "input": {
-        "job_url": "https://linkedin.com/jobs/view/123456",
-        "company": "FinTech Global",
-        "title": "Senior Backend Engineer"
+        "job_record": "{{ sample_job }}"
       },
-      "output": false
+      "output": {
+        "is_duplicate": false,
+        "content_hash": "7f3d8c2a1e9b4f5a6d8e3c1b2a4f5e6d"
+      }
     },
     {
-      "step_id": 3,
-      "action": "detect_scam",
+      "step": 3,
+      "tool": "detect_scam",
       "input": {
-        "job_data": {
-          "company": "FinTech Global",
-          "description": "We are looking for a Python expert..."
-        }
+        "job_record": "{{ sample_job }}"
       },
       "output": {
         "is_scam": false,
-        "reason": null
+        "score": 15,
+        "flags": []
       }
     },
     {
-      "step_id": 4,
-      "action": "parse_jd",
+      "step": 4,
+      "tool": "parse_jd",
       "input": {
-        "job_text": "We are looking for a Python expert with FastAPI and AWS experience..."
+        "job_text": "{{ sample_job.raw_text }}"
       },
       "output": {
-        "skills": ["Python", "FastAPI", "AWS", "PostgreSQL"],
-        "seniority": "Senior",
-        "keywords": ["high-scale", "distributed systems"]
+        "required_skills": ["Python", "FastAPI", "React", "PostgreSQL"],
+        "preferred_skills": ["AWS", "Docker", "CI/CD"],
+        "experience_min_years": 5,
+        "salary_min": 140000,
+        "salary_max": 180000,
+        "salary_currency": "USD",
+        "responsibilities": ["building scalable APIs", "mentoring junior developers"]
       }
     },
     {
-      "step_id": 5,
-      "action": "compute_match_score",
+      "step": 5,
+      "tool": "compute_match_score",
       "input": {
-        "resume_text": "Experienced Python Developer...",
-        "jd_data": {
-          "skills": ["Python", "FastAPI", "AWS", "PostgreSQL"]
-        }
+        "resume": "John Doe - Software Engineer with 6 years experience in Python, FastAPI...",
+        "structured_jd": "{{ parse_jd.output }}",
+        "projects": []
       },
-      "output": 88.0
+      "output": {
+        "score": 88,
+        "breakdown": {
+          "required_skills_score": 95,
+          "preferred_skills_score": 75,
+          "experience_score": 90,
+          "project_alignment_score": 80,
+          "keyword_density_score": 85,
+          "ats_simulation_score": 92
+        },
+        "matched_skills": ["Python", "FastAPI", "React", "PostgreSQL", "Docker"],
+        "missing_skills": ["AWS (preferred)", "CI/CD (preferred)"]
+      }
     },
     {
-      "step_id": 6,
-      "action": "search_projects",
+      "step": 6,
+      "tool": "search_projects",
       "input": {
-        "keywords": ["FastAPI", "AWS", "distributed systems"],
-        "limit": 2
+        "jd_keywords": ["FastAPI", "React", "PostgreSQL", "API"]
       },
       "output": [
         {
-          "name": "Distributed Task Queue",
-          "source": "GitHub",
-          "url": "https://github.com/user/task-queue"
+          "title": "FastAPI Ecommerce Backend",
+          "description": "RESTful API built with FastAPI and PostgreSQL",
+          "tech_stack": ["Python", "FastAPI", "PostgreSQL", "Docker"],
+          "link": "https://github.com/example/fastapi-ecommerce",
+          "source": "github",
+          "stars": 234,
+          "reason_matched": "Matches FastAPI and PostgreSQL requirements"
         }
       ]
     },
     {
-      "step_id": 7,
-      "action": "add_projects_to_resume",
+      "step": 7,
+      "tool": "add_projects_to_resume",
       "input": {
-        "base_resume": "Experienced Python Developer...",
-        "projects": [{"name": "Distributed Task Queue", "url": "..."}]
+        "base_resume": "{{ user.base_resume }}",
+        "selected_projects": "{{ search_projects.output }}"
       },
-      "output": "Experienced Python Developer... \nProjects: Distributed Task Queue..."
+      "output": {
+        "new_resume": "Updated resume with projects section...",
+        "project_metadata": [
+          {
+            "title": "FastAPI Ecommerce Backend",
+            "tech_stack": ["Python", "FastAPI", "PostgreSQL", "Docker"],
+            "link": "https://github.com/example/fastapi-ecommerce",
+            "reason_matched": "Matches FastAPI and PostgreSQL requirements",
+            "autogenerated": false,
+            "date_added": "2024-01-15T10:35:00Z"
+          }
+        ]
+      }
     },
     {
-      "step_id": 8,
-      "action": "rewrite_resume_to_match_jd",
+      "step": 8,
+      "tool": "rewrite_resume_to_match_jd",
       "input": {
-        "resume": "Experienced Python Developer... Projects: Distributed Task Queue...",
-        "jd_data": {"skills": ["Python", "FastAPI", "AWS"]}
+        "resume": "{{ add_projects_to_resume.output.new_resume }}",
+        "structured_jd": "{{ parse_jd.output }}"
       },
-      "output": "Senior Backend Engineer with deep expertise in Python and FastAPI..."
+      "output": {
+        "tailored_resume": "Tailored resume emphasizing Python, FastAPI, React, PostgreSQL..."
+      }
     },
     {
-      "step_id": 9,
-      "action": "generate_cover_letter",
+      "step": 9,
+      "tool": "generate_cover_letter",
       "input": {
-        "job_data": {"company": "FinTech Global", "title": "Senior Backend Engineer"},
-        "resume": "Senior Backend Engineer...",
+        "job_data": "{{ sample_job }}",
+        "tailored_resume": "{{ rewrite_resume.output }}",
         "personality": "professional"
       },
-      "output": "Dear Hiring Manager at FinTech Global, I am writing to express my interest..."
+      "output": {
+        "cover_letter": "Dear Hiring Manager,\n\nI am writing to express my strong interest in the Senior Software Engineer position at TechCorp Inc..."
+      }
     },
     {
-      "step_id": 10,
-      "action": "submit_application",
+      "step": 10,
+      "tool": "submit_application",
       "input": {
-        "url": "https://linkedin.com/jobs/view/123456",
-        "resume_content": "Senior Backend Engineer...",
-        "cover_letter": "Dear Hiring Manager..."
+        "job_url": "{{ sample_job.url }}",
+        "form_data": {
+          "full_name": "John Doe",
+          "email": "john.doe@example.com",
+          "phone": "+1-555-0123",
+          "linkedin": "https://linkedin.com/in/johndoe"
+        },
+        "files": {
+          "resume": "{{ rewrite_resume.output }}",
+          "cover_letter": "{{ generate_cover_letter.output }}"
+        }
       },
-      "output": "Success"
+      "output": {
+        "status": "submitted",
+        "confirmation": "Application #987654",
+        "screenshot": "s3://bucket/screenshots/job_12345_20240115.png",
+        "submitted_at": "2024-01-15T10:40:00Z"
+      }
     },
     {
-      "step_id": 11,
-      "action": "store_application_status",
+      "step": 11,
+      "tool": "store_application_status",
       "input": {
-        "job_id": 123,
-        "status": "applied"
+        "job_id": 12345,
+        "status": "submitted",
+        "metadata": {
+          "confirmation": "Application #987654",
+          "match_score": 88,
+          "projects_added": 1,
+          "resume_version": "v_12345_20240115"
+        }
       },
-      "output": "Stored"
+      "output": {
+        "success": true,
+        "application_id": 567
+      }
     }
-  ]
+  ],
+  "database_records": {
+    "jobs": {
+      "id": 12345,
+      "source": "indeed",
+      "url": "https://www.indeed.com/viewjob?jk=abc123",
+      "title": "Senior Software Engineer",
+      "company": "TechCorp Inc",
+      "location": "San Francisco, CA",
+      "parsed_json": {
+        "required_skills": ["Python", "FastAPI", "React", "PostgreSQL"],
+        "salary_min": 140000,
+        "salary_max": 180000
+      },
+      "is_scam": false,
+      "scam_score": 15,
+      "content_hash": "7f3d8c2a1e9b4f5a6d8e3c1b2a4f5e6d",
+      "status": "applied",
+      "scraped_at": "2024-01-15T10:30:00Z"
+    },
+    "match_scores": {
+      "id": 456,
+      "job_id": 12345,
+      "resume_id": 789,
+      "user_id": 1,
+      "total_score": 88,
+      "required_skills_score": 95,
+      "preferred_skills_score": 75,
+      "matched_skills": ["Python", "FastAPI", "React", "PostgreSQL", "Docker"],
+      "missing_skills": ["AWS", "CI/CD"],
+      "calculated_at": "2024-01-15T10:33:00Z"
+    },
+    "projects": {
+      "id": 101,
+      "user_id": 1,
+      "job_id": 12345,
+      "title": "FastAPI Ecommerce Backend",
+      "description": "RESTful API built with FastAPI and PostgreSQL",
+      "tech_stack": ["Python", "FastAPI", "PostgreSQL", "Docker"],
+      "link": "https://github.com/example/fastapi-ecommerce",
+      "source": "github",
+      "is_autogenerated": false,
+      "is_verified": true,
+      "added_at": "2024-01-15T10:35:00Z"
+    },
+    "resumes": {
+      "id": 789,
+      "user_id": 1,
+      "version_name": "v_12345_20240115",
+      "is_base": false,
+      "parent_resume_id": 100,
+      "content": "Tailored resume for TechCorp Inc...",
+      "ats_score": 92,
+      "created_at": "2024-01-15T10:36:00Z"
+    },
+    "cover_letters": {
+      "id": 202,
+      "user_id": 1,
+      "job_id": 12345,
+      "resume_id": 789,
+      "content": "Dear Hiring Manager...",
+      "personality": "professional",
+      "word_count": 325,
+      "created_at": "2024-01-15T10:38:00Z"
+    },
+    "applications": {
+      "id": 567,
+      "user_id": 1,
+      "job_id": 12345,
+      "resume_id": 789,
+      "cover_letter_id": 202,
+      "status": "submitted",
+      "confirmation_number": "Application #987654",
+      "is_sandbox": false,
+      "approved_by_user": true,
+      "screenshot_urls": ["s3://bucket/screenshots/job_12345_20240115.png"],
+      "submitted_at": "2024-01-15T10:40:00Z"
+    }
+  }
 }

@@ -1,0 +1,276 @@
+"""
+LangChain Tools for Career Agent
+Implements all tool-calling functions defined in the system prompt.
+"""
+from langchain.tools import tool
+from typing import List, Dict, Optional, Any
+import hashlib
+from datetime import datetime
+
+# Import services
+from app.services.scraper import scraper_service
+from app.services.scam_detector import scam_detector_service
+from app.services.parser import parser_service
+from app.services.matcher import matcher_service
+from app.services.project_finder import project_finder_service
+from app.services.resume_enhancer import resume_enhancer_service
+from app.services.cover_letter_generator import cover_letter_service
+from app.services.auto_apply import auto_apply_service
+
+
+@tool
+async def scrape_jobs(role: str, region: str, platforms: List[str], since_timestamp: Optional[str] = None) -> List[Dict]:
+    """
+    Scrapes job listings from specified platforms for a given role and region.
+    
+    Args:
+        role: The job role to search for (e.g., "Software Engineer")
+        region: The location to search in (e.g., "San Francisco", "Remote")
+        platforms: List of platforms to scrape (e.g., ["indeed", "linkedin"])
+        since_timestamp: Optional timestamp to filter jobs posted after this time
+        
+    Returns:
+        List of job dictionaries with title, company, location, url, source
+    """
+    return await scraper_service.scrape_jobs(role, region, platforms)
+
+
+@tool
+def deduplicate_job(job_record: Dict) -> bool:
+    """
+    Checks if a job has already been processed using multiple deduplication strategies.
+    
+    Args:
+        job_record: Job data with url, company, title, posted_date, raw_text
+        
+    Returns:
+        True if the job is a duplicate (skip it), False if new
+    """
+    # Strategy 1: Check by URL
+    url = job_record.get('url', '')
+    if url:
+        # TODO: Query database for existing job with this URL
+        pass
+    
+    # Strategy 2: Check by company + role + posted_date
+    company = job_record.get('company', '')
+    title = job_record.get('title', '')
+    posted_date = job_record.get('posted_date', '')
+    if company and title and posted_date:
+        # TODO: Query database for matching combo
+        pass
+    
+    # Strategy 3: Content fingerprint (perceptual hash)
+    raw_text = job_record.get('raw_text', '')
+    if raw_text:
+        normalized = raw_text.lower().strip()
+        content_hash = hashlib.sha256(normalized.encode()).hexdigest()
+        job_record['content_hash'] = content_hash
+        # TODO: Check if this hash exists in DB
+    
+    return False  # For now, accept all jobs
+
+
+@tool
+def detect_scam(job_record: Dict) -> Dict:
+    """
+    Analyzes a job record to detect potential scams.
+    
+    Args:
+        job_record: Job details (title, company, raw_text, etc.)
+        
+    Returns:
+        Dictionary with 'is_scam' (bool), 'score' (0-100), 'flags' (list)
+    """
+    return scam_detector_service.detect_scam(job_record)
+
+
+@tool
+def parse_jd(job_text: str) -> Dict:
+    """
+    Parses raw job description into structured data.
+    Extracts skills, responsibilities, salary, requirements, etc.
+    
+    Args:
+        job_text: Raw job description text
+        
+    Returns:
+        Structured dict with required_skills, preferred_skills, salary, etc.
+    """
+    return parser_service.parse_job_description(job_text)
+
+
+@tool
+def compute_match_score(resume: str, structured_jd: Dict, projects: List[Dict]) -> Dict:
+    """
+    Computes a comprehensive match score (0-100) using multiple factors.
+    
+    Args:
+        resume: User's resume content
+        structured_jd: Parsed job description
+        projects: List of user projects
+        
+    Returns:
+        Dict with 'score' (int), 'breakdown' (dict with component scores)
+    """
+    return matcher_service.compute_score(resume, structured_jd, projects)
+
+
+@tool
+async def search_projects(jd_keywords: List[str]) -> List[Dict]:
+    """
+    Searches for relevant projects across GitHub, HuggingFace, Kaggle, etc.
+    
+    Args:
+        jd_keywords: Keywords from job description to search for
+        
+    Returns:
+        List of projects with title, description, tech_stack, link, source
+    """
+    return await project_finder_service.search_projects(jd_keywords)
+
+
+@tool
+def add_projects_to_resume(base_resume: str, selected_projects: List[Dict]) -> Dict:
+    """
+    Adds selected projects to the resume and returns metadata.
+    
+    Args:
+        base_resume: Original resume content
+        selected_projects: Projects to add
+        
+    Returns:
+        Dict with 'new_resume' (str) and 'project_metadata' (list)
+    """
+    new_resume = resume_enhancer_service.add_projects(base_resume, selected_projects)
+    metadata = [
+        {
+            "title": p.get("title"),
+            "tech_stack": p.get("tech_stack"),
+            "link": p.get("link"),
+            "reason_matched": p.get("reason_matched", "Relevant to JD"),
+            "autogenerated": p.get("autogenerated", False),
+            "date_added": datetime.now().isoformat()
+        }
+        for p in selected_projects
+    ]
+    return {
+        "new_resume": new_resume,
+        "project_metadata": metadata
+    }
+
+
+@tool
+def store_project_metadata(project_record: Dict) -> bool:
+    """
+    Stores project metadata in the database.
+    
+    Args:
+        project_record: Project data to store
+        
+    Returns:
+        True if successful
+    """
+    # TODO: Implement database storage
+    return True
+
+
+@tool
+def rewrite_resume_to_match_jd(resume: str, structured_jd: Dict) -> str:
+    """
+    Tailors resume to match job description while maintaining honesty.
+    
+    Args:
+        resume: Base resume
+        structured_jd: Parsed JD
+        
+    Returns:
+        Tailored resume text
+    """
+    return resume_enhancer_service.tailor_resume(resume, structured_jd)
+
+
+@tool
+def generate_cover_letter(job_data: Dict, tailored_resume: str, personality: str) -> str:
+    """
+    Generates a personalized cover letter.
+    
+    Args:
+        job_data: Job details (title, company, description)
+        tailored_resume: The tailored resume
+        personality: professional, friendly, technical, direct, creative, relocation_friendly
+        
+    Returns:
+        Generated cover letter text
+    """
+    return cover_letter_service.generate(job_data, tailored_resume, personality)
+
+
+@tool
+async def submit_application(job_url: str, form_data: Dict, files: Dict) -> Dict:
+    """
+    Submits job application using browser automation.
+    
+    Args:
+        job_url: URL of job application page
+        form_data: Form fields to fill
+        files: Files to attach (resume, cover_letter)
+        
+    Returns:
+        Dict with 'status', 'confirmation', 'screenshot' (optional)
+    """
+    return await auto_apply_service.submit(job_url, form_data, files)
+
+
+@tool
+def store_application_status(job_id: int, status: str, metadata: Dict) -> bool:
+    """
+    Logs application status to database.
+    
+    Args:
+        job_id: Job ID
+        status: Application status
+        metadata: Additional metadata
+        
+    Returns:
+        True if successful
+    """
+    # TODO: Implement database storage
+    return True
+
+
+@tool
+def dashboard_metrics() -> Dict:
+    """
+    Returns aggregated analytics metrics for the dashboard.
+    
+    Returns:
+        Dict with total_scraped, matched, applied, etc.
+    """
+    # TODO: Query database for metrics
+    return {
+        "total_scraped": 0,
+        "total_matched": 0,
+        "total_applied": 0,
+        "scams_detected": 0,
+        "duplicates_avoided": 0,
+        "avg_match_score": 0
+    }
+
+
+# Define the complete list of tools
+tools = [
+    scrape_jobs,
+    deduplicate_job,
+    detect_scam,
+    parse_jd,
+    compute_match_score,
+    search_projects,
+    add_projects_to_resume,
+    store_project_metadata,
+    rewrite_resume_to_match_jd,
+    generate_cover_letter,
+    submit_application,
+    store_application_status,
+    dashboard_metrics
+]

@@ -1,246 +1,65 @@
-# 🏗️ Career Agent - Complete Architecture
+# Architecture Overview
 
-## Folder Structure
+## High-Level Architecture
 
-```
-career_agent/
-├── .github/
-│   └── workflows/
-│       ├── ci.yml                    # Continuous Integration
-│       ├── deploy-backend.yml        # Backend deployment
-│       └── deploy-frontend.yml       # Frontend deployment
-├── backend/
-│   ├── alembic/                      # Database migrations
-│   │   ├── versions/
-│   │   └── env.py
-│   ├── app/
-│   │   ├── __init__.py
-│   │   ├── main.py                   # FastAPI app entry
-│   │   ├── config.py                 # Configuration management
-│   │   ├── database.py               # DB connection
-│   │   ├── dependencies.py           # Shared dependencies
-│   │   ├── models/                   # SQLAlchemy models
-│   │   │   ├── __init__.py
-│   │   │   ├── user.py
-│   │   │   ├── job.py
-│   │   │   ├── resume.py
-│   │   │   ├── project.py
-│   │   │   ├── application.py
-│   │   │   └── analytics.py
-│   │   ├── schemas/                  # Pydantic schemas
-│   │   │   ├── __init__.py
-│   │   │   ├── user.py
-│   │   │   ├── job.py
-│   │   │   ├── resume.py
-│   │   │   ├── project.py
-│   │   │   ├── application.py
-│   │   │   └── tool_schemas.py       # Tool calling schemas
-│   │   ├── api/                      # API routes
-│   │   │   ├── __init__.py
-│   │   │   ├── auth.py
-│   │   │   ├── jobs.py
-│   │   │   ├── resumes.py
-│   │   │   ├── applications.py
-│   │   │   ├── analytics.py
-│   │   │   ├── agent.py
-│   │   │   └── websocket.py
-│   │   ├── core/                     # Core business logic
-│   │   │   ├── __init__.py
-│   │   │   ├── security.py           # Auth & encryption
-│   │   │   ├── logging.py            # Logging config
-│   │   │   └── rate_limiter.py       # Rate limiting
-│   │   ├── agent/                    # LangChain agent
-│   │   │   ├── __init__.py
-│   │   │   ├── executor.py           # Agent executor
-│   │   │   ├── prompts.py            # System prompts
-│   │   │   ├── chains.py             # LangChain chains
-│   │   │   └── memory.py             # Conversation memory
-│   │   ├── tools/                    # LangChain tools
-│   │   │   ├── __init__.py
-│   │   │   ├── scraping/
-│   │   │   │   ├── __init__.py
-│   │   │   │   ├── scraper.py        # scrape_jobs
-│   │   │   │   ├── linkedin.py
-│   │   │   │   ├── indeed.py
-│   │   │   │   ├── glassdoor.py
-│   │   │   │   └── robots_checker.py
-│   │   │   ├── deduplication.py      # deduplicate_job
-│   │   │   ├── scam_detection.py     # detect_scam
-│   │   │   ├── jd_parser.py          # parse_jd
-│   │   │   ├── match_scorer.py       # compute_match_score
-│   │   │   ├── project_search.py     # search_projects
-│   │   │   ├── resume_builder.py     # add_projects_to_resume
-│   │   │   ├── resume_rewriter.py    # rewrite_resume_to_match_jd
-│   │   │   ├── cover_letter.py       # generate_cover_letter
-│   │   │   ├── form_filler.py        # submit_application
-│   │   │   ├── storage.py            # store_* tools
-│   │   │   └── analytics.py          # dashboard_metrics
-│   │   ├── services/                 # External services
-│   │   │   ├── __init__.py
-│   │   │   ├── email.py              # Email service
-│   │   │   ├── storage.py            # S3-compatible storage
-│   │   │   ├── webhooks.py           # Webhook delivery
-│   │   │   ├── github_api.py         # GitHub integration
-│   │   │   ├── linkedin_api.py       # LinkedIn OAuth
-│   │   │   └── captcha_handler.py    # CAPTCHA prompt
-│   │   ├── scheduler/                # Background jobs
-│   │   │   ├── __init__.py
-│   │   │   ├── jobs.py               # APScheduler jobs
-│   │   │   └── tasks.py              # Celery tasks (optional)
-│   │   └── utils/                    # Utilities
-│   │       ├── __init__.py
-│   │       ├── embeddings.py         # Vector embeddings
-│   │       ├── ats_simulator.py      # ATS scoring
-│   │       ├── content_hashing.py    # Fingerprinting
-│   │       └── validators.py         # Input validation
-│   ├── tests/
-│   │   ├── __init__.py
-│   │   ├── conftest.py
-│   │   ├── test_tools/
-│   │   ├── test_api/
-│   │   └── test_agent/
-│   ├── scripts/
-│   │   ├── setup.sh                  # Initial setup
-│   │   ├── migrate.sh                # Run migrations
-│   │   └── seed.py                   # Seed database
-│   ├── requirements.txt
-│   ├── requirements-dev.txt
-│   ├── Dockerfile
-│   ├── .env.example
-│   └── alembic.ini
-├── frontend/
-│   ├── public/
-│   │   ├── index.html
-│   │   ├── robots.txt
-│   │   └── favicon.ico
-│   ├── src/
-│   │   ├── App.jsx
-│   │   ├── main.jsx
-│   │   ├── index.css
-│   │   ├── components/
-│   │   │   ├── layout/
-│   │   │   │   ├── Header.jsx
-│   │   │   │   ├── Sidebar.jsx
-│   │   │   │   └── Footer.jsx
-│   │   │   ├── jobs/
-│   │   │   │   ├── JobCard.jsx       # Indeed-style card
-│   │   │   │   ├── JobList.jsx       # Infinite scroll
-│   │   │   │   ├── JobDetail.jsx     # Detail modal
-│   │   │   │   ├── JobFilters.jsx    # Search filters
-│   │   │   │   └── MatchScoreBadge.jsx
-│   │   │   ├── dashboard/
-│   │   │   │   ├── Dashboard.jsx
-│   │   │   │   ├── MetricCard.jsx
-│   │   │   │   ├── Charts.jsx
-│   │   │   │   └── Timeline.jsx
-│   │   │   ├── resume/
-│   │   │   │   ├── ResumeEditor.jsx
-│   │   │   │   ├── ResumePreview.jsx
-│   │   │   │   ├── ATSPreview.jsx
-│   │   │   │   └── VersionHistory.jsx
-│   │   │   ├── projects/
-│   │   │   │   ├── ProjectSearch.jsx
-│   │   │   │   ├── ProjectCard.jsx
-│   │   │   │   └── ProjectSelector.jsx
-│   │   │   ├── applications/
-│   │   │   │   ├── ApplicationList.jsx
-│   │   │   │   ├── ApplicationDetail.jsx
-│   │   │   │   └── StatusTracker.jsx
-│   │   │   ├── settings/
-│   │   │   │   ├── Settings.jsx
-│   │   │   │   ├── Preferences.jsx
-│   │   │   │   ├── Integrations.jsx
-│   │   │   │   └── Security.jsx
-│   │   │   └── common/
-│   │   │       ├── Button.jsx
-│   │   │       ├── Modal.jsx
-│   │   │       ├── Input.jsx
-│   │   │       ├── Dropdown.jsx
-│   │   │       └── Notification.jsx
-│   │   ├── hooks/
-│   │   │   ├── useAuth.js
-│   │   │   ├── useJobs.js
-│   │   │   ├── useWebSocket.js
-│   │   │   └── useInfiniteScroll.js
-│   │   ├── services/
-│   │   │   ├── api.js               # Axios instance
-│   │   │   ├── auth.js              # Auth service
-│   │   │   ├── jobs.js              # Jobs API
-│   │   │   └── websocket.js         # WebSocket client
-│   │   ├── utils/
-│   │   │   ├── formatters.js
-│   │   │   ├── validators.js
-│   │   │   └── constants.js
-│   │   └── store/                   # State management (optional)
-│   │       └── index.js
-│   ├── package.json
-│   ├── vite.config.js
-│   ├── tailwind.config.js
-│   ├── postcss.config.js
-│   ├── .env.example
-│   └── Dockerfile
-├── infrastructure/
-│   ├── terraform/                   # Infrastructure as Code
-│   │   ├── main.tf
-│   │   ├── variables.tf
-│   │   └── outputs.tf
-│   ├── docker-compose.yml           # Local development
-│   ├── docker-compose.prod.yml      # Production
-│   └── k8s/                         # Kubernetes (optional)
-│       ├── deployment.yaml
-│       └── service.yaml
-├── docs/
-│   ├── API.md                       # API documentation
-│   ├── ARCHITECTURE.md              # This file
-│   ├── DEPLOYMENT.md                # Deployment guide
-│   ├── DEVELOPMENT.md               # Dev setup guide
-│   ├── TOOLS.md                     # Tool calling reference
-│   └── LEGAL.md                     # Legal & ethics
-├── .gitignore
-├── .env.example
-├── README.md
-├── LICENSE
-└── CONTRIBUTING.md
+The Career Agent is a modular, event-driven system designed to automate the job application process. It consists of the following core components:
+
+1.  **Frontend (React + Tailwind)**: A responsive web interface for users to manage their profile, view job matches, and track applications. It communicates with the backend via REST API.
+2.  **Backend (FastAPI)**: The core application logic, exposing APIs for the frontend and handling background tasks.
+3.  **Agent Orchestrator (LangChain)**: An intelligent agent that coordinates various tools (scraping, parsing, matching, applying) to achieve the user's goals.
+4.  **Database (PostgreSQL)**: Stores all persistent data, including user profiles, resumes, jobs, applications, and analytics.
+5.  **Browser Automation (Playwright)**: Handles interaction with job boards for scraping and auto-applying.
+6.  **External Integrations**: Connects to third-party services like OpenAI (LLM), SendGrid (Email), and various job boards.
+
+## Component Diagram
+
+```mermaid
+graph TD
+    User[User] -->|HTTPS| Frontend[React Frontend]
+    Frontend -->|REST API| Backend[FastAPI Backend]
+    
+    subgraph Backend Services
+        Backend -->|Orchestrates| Agent[LangChain Agent]
+        Agent -->|Calls| Tools[Tools Layer]
+        Tools -->|Scrapes| Scraper[Playwright Scraper]
+        Tools -->|Parses| Parser[Resume/JD Parser]
+        Tools -->|Scores| Matcher[Match Scorer]
+        Tools -->|Generates| Generator[Cover Letter Gen]
+    end
+    
+    subgraph Data Layer
+        Backend -->|Reads/Writes| DB[(PostgreSQL)]
+        Backend -->|Stores Files| Storage[S3/Local Storage]
+    end
+    
+    subgraph External World
+        Scraper -->|HTTP/Browser| JobBoards[Indeed, LinkedIn, etc.]
+        Agent -->|API| LLM[LLM Provider (OpenAI)]
+        Backend -->|SMTP/API| Email[Email Service]
+    end
 ```
 
-## Technology Stack
+## Data Flow
 
-### Backend
-- **Framework**: FastAPI 0.109+
-- **Agent**: LangChain 0.1+
-- **Database**: PostgreSQL 15+ (Neon/Supabase free tier)
-- **ORM**: SQLAlchemy 2.0+ (async)
-- **Migrations**: Alembic
-- **LLM**: OpenAI GPT-4 / Anthropic Claude / Google Gemini
-- **Browser Automation**: Playwright 1.40+
-- **Task Queue**: APScheduler (or Celery for production)
-- **Authentication**: OAuth2 + JWT
-- **Email**: SendGrid / Mailgun (free tier)
-- **Storage**: Supabase Storage / S3-compatible
+1.  **Job Discovery**: The Scheduler triggers the Scraper to fetch new jobs from configured sources.
+2.  **Processing**:
+    *   **Deduplication**: Jobs are checked against the database to avoid duplicates.
+    *   **Scam Detection**: Jobs are analyzed for scam indicators.
+    *   **Parsing**: Job descriptions are parsed into structured data.
+3.  **Matching**: The Matcher compares the job against the user's resume and profile to calculate a Match Score.
+4.  **Action**:
+    *   If the score exceeds the threshold, the Agent initiates the application process.
+    *   **Project Search**: Relevant projects are found and added to the resume.
+    *   **Resume Tailoring**: The resume is rewritten to highlight relevant skills.
+    *   **Cover Letter**: A personalized cover letter is generated.
+5.  **Application**: The Auto-Applier submits the application (if enabled) or queues it for user review.
+6.  **Feedback**: Application status is tracked, and analytics are updated.
 
-### Frontend
-- **Framework**: React 18+ with Vite
-- **Styling**: Tailwind CSS 3+
-- **State**: React Context / Zustand
-- **HTTP Client**: Axios
-- **WebSocket**: Socket.io-client
-- **Charts**: Recharts / Chart.js
-- **Forms**: React Hook Form
-- **Routing**: React Router v6
+## Tech Stack
 
-### DevOps
-- **CI/CD**: GitHub Actions
-- **Containerization**: Docker
-- **Backend Hosting**: Railway / Render / Fly.io (free tier)
-- **Frontend Hosting**: Vercel / Netlify (free tier)
-- **Monitoring**: Sentry (free tier)
-- **Analytics**: PostHog (free tier, optional)
-
-## Core Principles
-
-1. **Ethics First**: Never fabricate, always transparent, user consent
-2. **Legal Compliance**: robots.txt, ToS, rate limiting, CAPTCHA respect
-3. **Privacy**: PII encrypted, user data deletion, GDPR-ready
-4. **Scalability**: Async operations, queue-based processing
-5. **Observability**: Comprehensive logging, metrics, alerts
-6. **User Control**: Sandbox mode, manual approval, opt-in/out
+*   **Frontend**: React, Vite, Tailwind CSS
+*   **Backend**: Python, FastAPI
+*   **Database**: PostgreSQL, SQLAlchemy
+*   **AI/ML**: LangChain, OpenAI GPT-4/3.5
+*   **Automation**: Playwright
+*   **Infrastructure**: Docker, GitHub Actions, Render/Railway/Vercel

@@ -1,35 +1,27 @@
-const API_BASE_URL = 'http://127.0.0.1:8000';
+"""
+API Service for Frontend Integration
+"""
+import requests
+    from typing import Dict, List
 
-export const api = {
-    async getJobs() {
-        const response = await fetch(`${API_BASE_URL}/jobs`);
-        if (!response.ok) throw new Error('Failed to fetch jobs');
-        return response.json();
-    },
+BASE_URL = "http://127.0.0.1:8000/api/v1"
 
-    async getStats() {
-        const response = await fetch(`${API_BASE_URL}/dashboard/stats`);
-        if (!response.ok) throw new Error('Failed to fetch stats');
-        return response.json();
-    },
+class APIService:
+@staticmethod
+    def get_jobs(skip: int = 0, limit: int = 100) -> List[Dict]:
+"""Fetch jobs from API"""
+try:
+response = requests.get(f"{BASE_URL}/jobs/", params = { "skip": skip, "limit": limit })
+return response.json() if response.status_code == 200 else[]
+        except Exception as e:
+print(f"Error fetching jobs: {e}")
+return []
 
-    async triggerScrape(region, role) {
-        const response = await fetch(`${API_BASE_URL}/jobs/scrape?region=${encodeURIComponent(region)}&role=${encodeURIComponent(role)}`, {
-            method: 'POST'
-        });
-        if (!response.ok) throw new Error('Failed to trigger scrape');
-        return response.json();
-    },
-
-    async runAgent(input) {
-        const response = await fetch(`${API_BASE_URL}/agent/run`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ input }),
-        });
-        if (!response.ok) throw new Error('Failed to run agent');
-        return response.json();
-    }
-};
+@staticmethod
+    def trigger_scrape(region: str, role: str) -> Dict:
+"""Trigger job scraping"""
+try:
+response = requests.post(f"{BASE_URL}/jobs/scrape", params = { "region": region, "role": role })
+return response.json() if response.status_code == 200 else { "error": "Failed" }
+        except Exception as e:
+return { "error": str(e) }
