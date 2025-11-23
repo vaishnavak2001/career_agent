@@ -68,8 +68,8 @@ async def scrape_jobs(role: str, region: str, platforms: List[str], since_timest
             # Calculate Match Score (Basic)
             match_score = matcher_service.compute_match_score(job_data.get("description", ""), ["python", "react", "fastapi"]) # TODO: Get actual user skills
             
+            
             new_job = Job(
-                id=f"job_{datetime.now().timestamp()}_{saved_count}", # Simple ID generation
                 title=job_data["title"],
                 company=job_data["company"],
                 location=job_data["location"],

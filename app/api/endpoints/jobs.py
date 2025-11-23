@@ -75,7 +75,6 @@ async def trigger_scrape(region: str, role: str, db: Session = Depends(get_db)):
             )
             
             new_job = Job(
-                id=f"job_{datetime.now().timestamp()}_{saved_count}",
                 title=job_data["title"],
                 company=job_data["company"],
                 location=job_data["location"],
