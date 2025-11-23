@@ -13,21 +13,8 @@ from langchain.memory import ConversationBufferMemory
 from typing import List, Dict, Any, Optional
 import os
 
-from app.config import settings
-from app.tools import (
-    scraping,
-    deduplication,
-    scam_detection,
-    jd_parser,
-    match_scorer,
-    project_search,
-    resume_builder,
-    resume_rewriter,
-    cover_letter,
-    form_filler,
-    storage,
-    analytics
-)
+from app.core.config import settings
+from app.agent.tools import tools
 
 # =====================================================
 # SYSTEM PROMPT
@@ -237,118 +224,8 @@ def get_llm(
 
 def create_tools() -> List[Tool]:
     """
-    Create all 13 LangChain tools with proper schemas.
-    
-    Returns:
-        List of configured tools
+    Return the list of tools defined in app.agent.tools.
     """
-    
-    tools = [
-        # Tool 1: Scrape Jobs
-        StructuredTool.from_function(
-            func=scraping.scrape_jobs,
-            name="scrape_jobs",
-            description="Scrape job listings from multiple platforms (LinkedIn, Indeed, Glassdoor). Use this to find new job opportunities based on region and role.",
-            args_schema=scraping.ScrapeJobsInput
-        ),
-        
-        # Tool 2: Deduplicate Job
-        StructuredTool.from_function(
-            func=deduplication.deduplicate_job,
-            name="deduplicate_job",
-            description="Check if a job has already been processed to avoid duplicates. Returns true if job is a duplicate.",
-            args_schema=deduplication.DeduplicateJobInput
-        ),
-        
-        # Tool 3: Detect Scam
-        StructuredTool.from_function(
-            func=scam_detection.detect_scam,
-            name="detect_scam",
-            description="Analyze a job posting for scam indicators and red flags. Returns a scam score (0-100) and list of flags.",
-            args_schema=scam_detection.DetectScamInput
-        ),
-        
-        # Tool 4: Parse JD
-        StructuredTool.from_function(
-            func=jd_parser.parse_jd,
-            name="parse_jd",
-            description="Parse a job description to extract structured information including required/preferred skills, tech stack, experience requirements, salary, and more.",
-            args_schema=jd_parser.ParseJDInput
-        ),
-        
-        # Tool 5: Compute Match Score
-        StructuredTool.from_function(
-            func=match_scorer.compute_match_score,
-            name="compute_match_score",
-            description="Calculate how well a resume matches a job description. Returns a score (0-100) with detailed breakdown by category.",
-            args_schema=match_scorer.ComputeMatchScoreInput
-        ),
-        
-        # Tool 6: Search Projects
-        StructuredTool.from_function(
-            func=project_search.search_projects,
-            name="search_projects",
-            description="Search for relevant projects on GitHub, HuggingFace, Kaggle, and ArXiv based on job keywords and tech stack.",
-            args_schema=project_search.SearchProjectsInput
-        ),
-        
-        # Tool 7: Add Projects to Resume
-        StructuredTool.from_function(
-            func=resume_builder.add_projects_to_resume,
-            name="add_projects_to_resume",
-            description="Add selected projects to a resume in the appropriate section. Returns updated resume with project metadata.",
-            args_schema=resume_builder.AddProjectsToResumeInput
-        ),
-        
-        # Tool 8: Store Project Metadata
-        StructuredTool.from_function(
-            func=storage.store_project_metadata,
-            name="store_project_metadata",
-            description="Save project information to the database for future reference and analytics.",
-            args_schema=storage.StoreProjectMetadataInput
-        ),
-        
-        # Tool 9: Rewrite Resume
-        StructuredTool.from_function(
-            func=resume_rewriter.rewrite_resume_to_match_jd,
-            name="rewrite_resume_to_match_jd",
-            description="Tailor a resume to match a specific job description while maintaining truthfulness. Optimizes for ATS and keyword matching.",
-            args_schema=resume_rewriter.RewriteResumeInput
-        ),
-        
-        # Tool 10: Generate Cover Letter
-        StructuredTool.from_function(
-            func=cover_letter.generate_cover_letter,
-            name="generate_cover_letter",
-            description="Generate a personalized cover letter with specified personality (professional, friendly, technical, direct, creative, relocation_friendly).",
-            args_schema=cover_letter.GenerateCoverLetterInput
-        ),
-        
-        # Tool 11: Submit Application
-        StructuredTool.from_function(
-            func=form_filler.submit_application,
-            name="submit_application",
-            description="Automated application submission via browser automation. Respects robots.txt and handles CAPTCHAs by prompting user. Can run in sandbox mode.",
-            args_schema=form_filler.SubmitApplicationInput
-        ),
-        
-        # Tool 12: Store Application Status
-        StructuredTool.from_function(
-            func=storage.store_application_status,
-            name="store_application_status",
-            description="Record application details, status, and metadata in the database for tracking and analytics.",
-            args_schema=storage.StoreApplicationStatusInput
-        ),
-        
-        # Tool 13: Dashboard Metrics
-        StructuredTool.from_function(
-            func=analytics.dashboard_metrics,
-            name="dashboard_metrics",
-            description="Retrieve comprehensive analytics and metrics for the user's job search including success rates, trends, and insights.",
-            args_schema=analytics.DashboardMetricsInput
-        ),
-    ]
-    
     return tools
 
 # =====================================================

@@ -36,8 +36,8 @@ async def trigger_scrape(region: str, role: str, db: Session = Depends(get_db)):
     """
     from app.agent.tools import scrape_jobs
     
-    # Call the tool directly
+    # Call the tool's underlying function using .func
     # Note: The tool handles DB saving internally
-    result = await scrape_jobs(role=role, region=region, platforms=["indeed", "linkedin"])
+    result = await scrape_jobs.func(role=role, region=region, platforms=["indeed", "linkedin"])
     
     return result
