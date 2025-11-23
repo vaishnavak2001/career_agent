@@ -38,6 +38,10 @@ class Settings(BaseSettings):
     ADZUNA_API_ID: Optional[str] = os.getenv("ADZUNA_API_ID")
     ADZUNA_API_KEY: Optional[str] = os.getenv("ADZUNA_API_KEY")
 
+    # Email
+    SENDGRID_API_KEY: Optional[str] = os.getenv("SENDGRID_API_KEY")
+    EMAIL_FROM: str = os.getenv("EMAIL_FROM", "noreply@careeragent.com")
+
     class Config:
         case_sensitive = True
         env_file = ".env"

@@ -90,6 +90,22 @@ async def scrape_jobs(role: str, region: str, platforms: List[str], since_timest
     finally:
         db.close()
 
+    # 4. Send Email Alert (if configured)
+    if saved_count > 0:
+        try:
+            # We need a target email. For now, we'll use a default or env var.
+            # In a real multi-user app, this would come from the user's profile.
+            target_email = "vaishnavak2001@gmail.com" # TODO: Replace with dynamic user email
+            if target_email:
+                from app.services.email import email_service
+                # Filter to get the job objects we just saved/found
+                # For simplicity, we'll just send the top 5 from this batch
+                top_jobs = sorted(all_jobs, key=lambda x: x.get('match_score', 0), reverse=True)[:5]
+                await email_service.send_job_alert(target_email, top_jobs)
+                print(f"Email alert sent to {target_email}")
+        except Exception as e:
+            print(f"Error sending email alert: {e}")
+
     return {
         "message": f"Successfully found and processed {saved_count} new jobs.",
         "jobs_found": saved_count,
