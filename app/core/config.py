@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     # External APIs
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
     
+    # Job Board APIs
+    ADZUNA_API_ID: Optional[str] = os.getenv("ADZUNA_API_ID")
+    ADZUNA_API_KEY: Optional[str] = os.getenv("ADZUNA_API_KEY")
+
     class Config:
         case_sensitive = True
         env_file = ".env"

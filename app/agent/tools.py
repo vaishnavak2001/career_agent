@@ -10,6 +10,7 @@ from sqlalchemy import func
 
 # Import services
 from app.services.scraper import scraper_service
+from app.services.adzuna import adzuna_service
 from app.services.scam_detector import scam_detector_service
 from app.services.parser import parser_service
 from app.services.matcher import matcher_service
@@ -24,76 +25,76 @@ from app.db.models import Job, Project, Application, ActivityLog
 
 
 @tool
-async def scrape_jobs(role: str, region: str, platforms: List[str], since_timestamp: Optional[str] = None) -> List[Dict]:
+async def scrape_jobs(role: str, region: str, platforms: List[str], since_timestamp: Optional[str] = None) -> Dict:
     """
-    Scrapes job listings from specified platforms for a given role and region.
+    Scrapes job listings from specified platforms (e.g., LinkedIn, Indeed, Adzuna) for a given role and region.
+    Returns a summary of jobs found and saved.
+    """
+    all_jobs = []
     
-    Args:
-        role: The job role to search for (e.g., "Software Engineer")
-        region: The location to search in (e.g., "San Francisco", "Remote")
-        platforms: List of platforms to scrape (e.g., ["indeed", "linkedin"])
-        since_timestamp: Optional timestamp to filter jobs posted after this time
-        
-    Returns:
-        List of job dictionaries with title, company, location, url, source
-    """
-    return await scraper_service.scrape_jobs(role, region, platforms)
-
-
-@tool
-def deduplicate_job(job_record: Dict) -> bool:
-    """
-    Checks if a job has already been processed using multiple deduplication strategies.
+    # 1. Try Adzuna API first (Fast & Reliable)
+    print(f"Searching Adzuna for {role} in {region}...")
+    adzuna_jobs = await adzuna_service.search_jobs(role, region)
+    if adzuna_jobs:
+        print(f"Found {len(adzuna_jobs)} jobs on Adzuna")
+        all_jobs.extend(adzuna_jobs)
     
-    Args:
-        job_record: Job data with url, company, title, posted_date, raw_text
-        
-    Returns:
-        True if the job is a duplicate (skip it), False if new
-    """
-    db = SessionLocal()
+    # 2. Fallback/Supplement with Playwright Scraper if requested or if Adzuna yielded few results
+    if "indeed" in platforms or "linkedin" in platforms:
+        print(f"Scraping other platforms: {platforms}...")
+        scraped_jobs = await scraper_service.scrape_jobs(role, region, platforms)
+        all_jobs.extend(scraped_jobs)
+
+    if not all_jobs:
+        return {"message": "No jobs found.", "jobs_found": 0}
+
+    # 3. Process and Save Jobs
+    db: Session = SessionLocal()
+    saved_count = 0
+    
     try:
-        # Strategy 1: Check by URL
-        url = job_record.get('url', '')
-        if url:
-            existing = db.query(Job).filter(Job.url == url).first()
+        for job_data in all_jobs:
+            # Deduplicate by URL
+            existing = db.query(Job).filter(Job.url == job_data["url"]).first()
             if existing:
-                return True
-        
-        # Strategy 2: Check by company + role + posted_date (if available)
-        company = job_record.get('company', '')
-        title = job_record.get('title', '')
-        # posted_date handling might be complex depending on format, skipping exact date match for now
-        # but checking company + title is a good heuristic if recent
-        
-        if company and title:
-            # Check for same job in last 30 days? For now just check existence
-            existing = db.query(Job).filter(
-                Job.company == company, 
-                Job.title == title
-            ).first()
-            if existing:
-                return True
-        
-        return False
+                continue
+                
+            # Parse Description (if available)
+            parsed_data = {}
+            if job_data.get("description"):
+                # For API jobs, we might have a shorter description, but still useful to parse
+                parsed_data = parser_service.parse_job_description(job_data["description"])
+            
+            # Calculate Match Score (Basic)
+            match_score = matcher_service.compute_match_score(job_data.get("description", ""), ["python", "react", "fastapi"]) # TODO: Get actual user skills
+            
+            new_job = Job(
+                id=f"job_{datetime.now().timestamp()}_{saved_count}", # Simple ID generation
+                title=job_data["title"],
+                company=job_data["company"],
+                location=job_data["location"],
+                url=job_data["url"],
+                source=job_data["source"],
+                raw_text=job_data.get("description"),
+                parsed_data=parsed_data,
+                match_score=match_score,
+                is_scam=False # Default to False for now
+            )
+            db.add(new_job)
+            saved_count += 1
+            
+        db.commit()
+    except Exception as e:
+        print(f"Error saving jobs to DB: {e}")
+        db.rollback()
     finally:
         db.close()
 
-
-@tool
-def detect_scam(job_record: Dict) -> Dict:
-    """
-    Analyzes a job record to detect potential scams.
-    
-    Args:
-        job_record: Job details (title, company, raw_text, etc.)
-        
-    Returns:
-        Dictionary with 'is_scam' (bool), 'score' (0-100), 'flags' (list)
-    """
-    return scam_detector_service.detect_scam(job_record)
-
-
+    return {
+        "message": f"Successfully found and processed {saved_count} new jobs.",
+        "jobs_found": saved_count,
+        "sources": list(set(j["source"] for j in all_jobs))
+    }
 @tool
 def parse_jd(job_text: str) -> Dict:
     """
@@ -199,25 +200,6 @@ def store_project_metadata(project_record: Dict) -> bool:
     except Exception as e:
         print(f"Error storing project: {e}")
         db.rollback()
-        return False
-    finally:
-        db.close()
-
-
-@tool
-def rewrite_resume_to_match_jd(resume: str, structured_jd: Dict) -> str:
-    """
-    Tailors resume to match job description while maintaining honesty.
-    
-    Args:
-        resume: Base resume
-        structured_jd: Parsed JD
-        
-    Returns:
-        Tailored resume text
-    """
-    return resume_enhancer_service.tailor_resume(resume, structured_jd)
-
 
 @tool
 def generate_cover_letter(job_data: Dict, tailored_resume: str, personality: str) -> str:
