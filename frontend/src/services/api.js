@@ -1,4 +1,14 @@
-const BASE_URL = "http://localhost:8000/api/v1";
+const getBaseUrl = () => {
+    let url = import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
+    // Ensure URL ends with /api/v1
+    if (!url.endsWith('/api/v1')) {
+        // Remove trailing slash if present before appending
+        url = url.replace(/\/$/, "") + '/api/v1';
+    }
+    return url;
+};
+
+const BASE_URL = getBaseUrl();
 
 const api = {
     getJobs: async (filters = {}) => {
