@@ -12,9 +12,22 @@ def read_jobs(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """
     Retrieve jobs.
     """
-    # For now, return a placeholder or empty list until schemas are defined
     jobs = db.query(Job).offset(skip).limit(limit).all()
-    return [{"id": str(job.id), "title": job.title, "company": job.company} for job in jobs]
+    return [
+        {
+            "id": str(job.id),
+            "title": job.title,
+            "company": job.company,
+            "location": job.location,
+            "match_score": job.match_score,
+            "posted_date": job.posted_date.isoformat() if job.posted_date else None,
+            "source": job.source,
+            "url": job.url,
+            "is_scam": job.is_scam,
+            "parsed_json": job.parsed_data
+        }
+        for job in jobs
+    ]
 
 @router.post("/scrape")
 async def trigger_scrape(region: str, role: str, db: Session = Depends(get_db)):
@@ -34,7 +47,7 @@ async def trigger_scrape(region: str, role: str, db: Session = Depends(get_db)):
             # Parse JD (mocking raw text for now as scraper doesn't return full text yet)
             # In real impl, scraper should return raw_text
             raw_text = f"{job_data['title']} at {job_data['company']}. {job_data.get('description', '')}"
-            parsed_data = await parser_service.parse_jd(raw_text)
+            parsed_data = parser_service.parse_job_description(raw_text)
             
             job = Job(
                 title=job_data["title"],

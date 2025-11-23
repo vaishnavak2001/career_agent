@@ -54,6 +54,25 @@ class JobScraper:
                         
             except Exception as e:
                 print(f"Error scraping Indeed: {e}")
+                # Fallback mock data for demo/testing if scraping fails
+                if not jobs:
+                    print("Using mock data due to scraping error")
+                    jobs = [
+                        {
+                            "title": "Senior Software Engineer",
+                            "company": "Tech Corp (Mock)",
+                            "location": region,
+                            "url": "https://example.com/job1",
+                            "source": "mock"
+                        },
+                        {
+                            "title": "Python Developer",
+                            "company": "Startup Inc (Mock)",
+                            "location": "Remote",
+                            "url": "https://example.com/job2",
+                            "source": "mock"
+                        }
+                    ]
             finally:
                 await browser.close()
                 

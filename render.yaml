@@ -2,46 +2,17 @@ services:
   # Web Service - FastAPI Backend
   - type: web
     name: career-agent-api
-    env: python
-    region: oregon  # Choose: oregon, ohio, frankfurt, singapore
-    plan: free  # Free tier: 750 hours/month
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    env: docker
+    region: oregon
+    plan: free
+    dockerContext: .
     healthCheckPath: /
     envVars:
-      # Database connection (External - Supabase/Neon)
       - key: DATABASE_URL
         sync: false
-
-      
-      # Job API Keys (set these in Render dashboard)
-      - key: ADZUNA_API_ID
-        sync: false  # Must set manually in dashboard
-      - key: ADZUNA_API_KEY
-        sync: false
-      
-      # Email configuration for applications
-      - key: SMTP_HOST
-        value: smtp.gmail.com
-      - key: SMTP_PORT
-        value: 587
-      - key: SMTP_USER
-        sync: false  # Your email
-      - key: SMTP_PASSWORD
-        sync: false  # Gmail app password
-      
-      # LLM API Keys (choose one)
       - key: OPENAI_API_KEY
-        sync: false  # Optional: for GPT models
-      - key: ANTHROPIC_API_KEY
-        sync: false  # Optional: for Claude models
-      
-      # Application settings
-      - key: DRY_RUN
-        value: true  # Set to false to actually send applications
-      - key: MAX_APPLICATIONS_PER_DAY
-        value: 5
-      - key: PYTHON_VERSION
-        value: 3.11.0
-
-
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: PORT
+        value: 8000

@@ -2,7 +2,7 @@
 import requests
 import json
 
-BASE_URL = "http://127.0.0.1:8000"
+BASE_URL = "http://127.0.0.1:8000/api/v1"
 
 def test_api():
     """Run comprehensive API tests."""
@@ -11,25 +11,28 @@ def test_api():
     print("Career Agent API Tests")
     print("=" * 60)
     
-    # Test 1: Root endpoint
+    # Test 1: Root endpoint (Note: Root is at /, not /api/v1)
     print("\n[1] Testing root endpoint...")
-    response = requests.get(f"{BASE_URL}/")
-    print(f"Status: {response.status_code}")
-    print(json.dumps(response.json(), indent=2))
+    root_response = requests.get("http://127.0.0.1:8000/")
+    print(f"Status: {root_response.status_code}")
+    print(json.dumps(root_response.json(), indent=2))
     
     # Test 2: Scrape jobs
     print("\n[2] Testing job scraping...")
     response = requests.post(
         f"{BASE_URL}/jobs/scrape",
-        json={
+        params={
             "region": "San Francisco",
-            "role": "Software Engineer",
-            "platforms": ["LinkedIn", "Indeed"]
+            "role": "Software Engineer"
         }
     )
     print(f"Status: {response.status_code}")
-    result = response.json()
-    print(f"Jobs found: {result.get('jobs_found')}")
+    try:
+        result = response.json()
+        print(f"Jobs found: {result.get('jobs_found')}")
+    except json.JSONDecodeError:
+        print(f"Response text: {response.text}")
+        return
     
     # Test 3: List jobs
     print("\n[3] Listing scraped jobs...")

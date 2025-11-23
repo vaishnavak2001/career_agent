@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { api } from '../services/api';
+import api from '../services/api';
 
 const StatCard = ({ title, value, change, positive }) => (
     <div className="bg-white overflow-hidden shadow rounded-lg">

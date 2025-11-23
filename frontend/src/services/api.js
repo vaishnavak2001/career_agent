@@ -1,27 +1,68 @@
-"""
-API Service for Frontend Integration
-"""
-import requests
-    from typing import Dict, List
+const BASE_URL = "http://localhost:8000/api/v1";
 
-BASE_URL = "http://127.0.0.1:8000/api/v1"
+const api = {
+    getJobs: async (filters = {}) => {
+        const params = new URLSearchParams();
+        if (filters.keyword) params.append('keyword', filters.keyword);
+        if (filters.location) params.append('location', filters.location);
+        if (filters.skip) params.append('skip', filters.skip);
+        if (filters.limit) params.append('limit', filters.limit);
 
-class APIService:
-@staticmethod
-    def get_jobs(skip: int = 0, limit: int = 100) -> List[Dict]:
-"""Fetch jobs from API"""
-try:
-response = requests.get(f"{BASE_URL}/jobs/", params = { "skip": skip, "limit": limit })
-return response.json() if response.status_code == 200 else[]
-        except Exception as e:
-print(f"Error fetching jobs: {e}")
-return []
+        const response = await fetch(`${BASE_URL}/jobs/?${params.toString()}`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch jobs');
+        }
+        return response.json();
+    },
 
-@staticmethod
-    def trigger_scrape(region: str, role: str) -> Dict:
-"""Trigger job scraping"""
-try:
-response = requests.post(f"{BASE_URL}/jobs/scrape", params = { "region": region, "role": role })
-return response.json() if response.status_code == 200 else { "error": "Failed" }
-        except Exception as e:
-return { "error": str(e) }
+    triggerScrape: async (region, role) => {
+        const params = new URLSearchParams({ region, role });
+        const response = await fetch(`${BASE_URL}/jobs/scrape?${params.toString()}`, {
+            method: 'POST'
+        });
+        if (!response.ok) {
+            throw new Error('Failed to trigger scrape');
+        }
+        return response.json();
+    },
+
+    applyToJob: async (jobId) => {
+        const response = await fetch(`${BASE_URL}/applications/apply/${jobId}`, {
+            method: 'POST'
+        });
+        if (!response.ok) {
+            throw new Error('Failed to apply to job');
+        }
+        return response.json();
+    },
+
+    uploadResume: async (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch(`${BASE_URL}/resumes/upload`, {
+            method: 'POST',
+            body: formData
+        });
+        if (!response.ok) {
+            throw new Error('Failed to upload resume');
+        }
+        return response.json();
+    },
+
+    getStats: async () => {
+        const response = await fetch(`${BASE_URL}/dashboard/stats`);
+        if (!response.ok) {
+            // Return mock stats if endpoint fails (for dev/demo)
+            return {
+                jobs_scraped: 0,
+                applications_sent: 0,
+                interviews: 0,
+                scams_blocked: 0
+            };
+        }
+        return response.json();
+    }
+};
+
+export default api;

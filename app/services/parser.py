@@ -4,7 +4,7 @@ import json
 class JobParser:
     """Simple job description parser that works without LLM API keys"""
     
-    async def parse_jd(self, raw_text: str) -> dict:
+    def parse_job_description(self, raw_text: str) -> dict:
         """
         Parse raw job description text into structured data.
         Uses simple keyword extraction for now.
