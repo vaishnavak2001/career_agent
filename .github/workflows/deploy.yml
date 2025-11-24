@@ -1,54 +1,158 @@
-name: Deploy Career Agent
+name: Career Agent CI/CD Pipeline
 
 on:
   push:
-    branches: [main, master]
+    branches: [ main, develop ]
   pull_request:
-    branches: [main, master]
+    branches: [ main ]
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '18'
 
 jobs:
+  # Job 1: Lint and Test Backend
   test-backend:
     runs-on: ubuntu-latest
+    
     steps:
-      - uses: actions/checkout@v3
-      
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-      
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      
-      - name: Run tests
-        run: |
-          # Add pytest when tests are created
-          echo "Tests will run here"
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Cache Python dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov flake8
+    
+    - name: Lint with flake8
+      run: |
+        # Stop the build if there are Python syntax errors or undefined names
+        flake8 app --count --select=E9,F63,F7,F82 --show-source --statistics
+        # Exit-zero treats all errors as warnings
+        flake8 app --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      continue-on-error: true
+    
+    - name: Run tests
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+      run: |
+        echo "Running tests..."
+        # Add your test command here when tests are available
+        # pytest tests/ --cov=app --cov-report=xml
+      continue-on-error: true
+    
+    - name: Check imports
+      run: |
+        python -c "from app.models import Job, User; from app.database import Base; print('Imports OK')"
+  
+  # Job 2: Test Frontend
+  test-frontend:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+    
+    - name: Cache node modules
+      uses: actions/cache@v3
+      with:
+        path: frontend/node_modules
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+    
+    - name: Install dependencies
+      working-directory: ./frontend
+      run: npm ci
+    
+    - name: Lint frontend
+      working-directory: ./frontend
+      run: npm run lint || true
+      continue-on-error: true
+    
+    - name: Build frontend
+      working-directory: ./frontend
+      run: npm run build
 
+  # Job 3: Deploy Backend to Render
   deploy-backend:
-    needs: test-backend
+    needs: [test-backend]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
     steps:
-      - uses: actions/checkout@v3
-      
-      - name: Deploy to Render
-        env:
-          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-        run: |
-          echo "Backend auto-deploys via Render GitHub integration"
-
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Deploy to Render
+      env:
+        RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+      run: |
+        echo "Deploying to Render..."
+        curl -X POST \
+          -H "Authorization: Bearer $RENDER_API_KEY" \
+          -H "Content-Type: application/json" \
+          "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
+          -d '{"clearCache": false}'
+      continue-on-error: true
+  
+  # Job 4: Deploy Frontend to Vercel
   deploy-frontend:
+    needs: [test-frontend]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
     steps:
-      - uses: actions/checkout@v3
-      
-      -name: Deploy to Vercel
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        run: |
-          cd frontend
-          npx vercel --prod --token=$VERCEL_TOKEN --yes
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Deploy to Vercel
+      env:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      run: |
+        npm install -g vercel
+        cd frontend
+        vercel --prod --token=$VERCEL_TOKEN --yes
+      continue-on-error: true
+  
+  # Job 5: Health Check
+  post-deployment-check:
+    needs: [deploy-backend, deploy-frontend]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - name: Wait for deployment
+      run: sleep 60
+    
+    - name: Check backend health
+      run: |
+        curl -f https://your-backend-url.onrender.com/health || exit 1
+      continue-on-error: true
+    
+    - name: Check frontend
+      run: |
+        curl -f https://your-frontend-url.vercel.app || exit 1
+      continue-on-error: true

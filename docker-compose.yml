@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: career_agent_db
+    environment:
+      POSTGRES_DB: career_agent
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  backend:
+    build: .
+    container_name: career_agent_api
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:${DB_PASSWORD:-postgres}@db:5432/career_agent
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      ADZUNA_API_ID: ${ADZUNA_API_ID}
+      ADZUNA_API_KEY: ${ADZUNA_API_KEY}
+      SECRET_KEY: ${SECRET_KEY}
+      BACKEND_CORS_ORIGINS: http://localhost:3000,http://localhost:5173
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app/app
+      - ./.env:/app/.env
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend (Optional - for local development)
+  frontend:
+    build: ./frontend
+    container_name: career_agent_frontend
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: http://localhost:8000/api/v1
+    volumes:
+      - ./frontend/src:/app/src
+    command: npm run dev -- --host
+
+volumes:
+  postgres_data:
+
+networks:
+  default:
+    name: career_agent_network
