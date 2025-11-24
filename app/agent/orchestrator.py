@@ -1,6 +1,12 @@
-"""LangChain agent orchestrator for career automation."""
 from typing import List, Dict, Any, Optional
-from langchain.agents import AgentExecutor, create_openai_functions_agent
+try:
+    from langchain.agents import AgentExecutor, create_openai_functions_agent
+except ImportError:
+    # Fallback or mock for environments with incompatible langchain versions
+    print("Warning: Could not import AgentExecutor. Agent features will be disabled.")
+    AgentExecutor = None
+    create_openai_functions_agent = None
+
 from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.tools import Tool
@@ -51,8 +57,11 @@ class CareerAgent:
         ]
         return tools
     
-    def _create_agent(self) -> AgentExecutor:
+    def _create_agent(self) -> Optional[AgentExecutor]:
         """Create the agent executor."""
+        if not create_openai_functions_agent or not AgentExecutor:
+            return None
+            
         prompt = ChatPromptTemplate.from_messages([
             ("system", """You are an expert career AI assistant specializing in job applications.
             You help users by:
@@ -172,6 +181,9 @@ class CareerAgent:
     
     def run(self, task: str) -> str:
         """Run the agent with a task."""
+        if not self.agent:
+            return "Agent features are currently disabled due to missing dependencies."
+            
         try:
             result = self.agent.invoke({"input": task})
             return result["output"]
@@ -180,6 +192,9 @@ class CareerAgent:
     
     async def arun(self, task: str) -> str:
         """Run the agent asynchronously."""
+        if not self.agent:
+            return "Agent features are currently disabled due to missing dependencies."
+
         try:
             result = await self.agent.ainvoke({"input": task})
             return result["output"]
