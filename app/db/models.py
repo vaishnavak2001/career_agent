@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from sqlalchemy import Column, String, Boolean, Integer, Text, ForeignKey, DateTime, JSON
 from sqlalchemy.orm import relationship
-from app.db.session import Base
+from app.database import Base
 import json as json_lib
 
 class User(Base):

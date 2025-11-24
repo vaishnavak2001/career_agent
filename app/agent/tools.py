@@ -20,8 +20,8 @@ from app.services.cover_letter_generator import cover_letter_service
 from app.services.auto_apply import auto_apply_service
 
 # Import DB
-from app.db.session import SessionLocal
-from app.db.models import Job, Project, Application, ActivityLog
+from app.database import SessionLocal
+from app.models import Job, Project, Application, ActivityLog
 
 
 @tool

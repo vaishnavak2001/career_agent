@@ -2,8 +2,8 @@ from typing import List
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.db.session import get_db
-from app.db.models import Job
+from app.database import get_db
+from app.models import Job
 
 router = APIRouter()
 
@@ -15,7 +15,7 @@ def read_jobs(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     jobs = db.query(Job).offset(skip).limit(limit).all()
     return [
         {
-            "id": str(job.id),
+            "id": job.id,  # Return as integer
             "title": job.title,
             "company": job.company,
             "location": job.location,
@@ -24,7 +24,7 @@ def read_jobs(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
             "source": job.source,
             "url": job.url,
             "is_scam": job.is_scam,
-            "parsed_json": job.parsed_data
+            "parsed_json": job.parsed_json  # Fixed: use correct attribute name
         }
         for job in jobs
     ]
@@ -39,7 +39,7 @@ async def trigger_scrape(region: str, role: str, db: Session = Depends(get_db)):
     from app.services.scraper import scraper_service
     from app.services.parser import parser_service
     from app.services.matcher import matcher_service
-    from app.db.models import Job
+    from app.models import Job
     
     all_jobs = []
     
@@ -81,7 +81,7 @@ async def trigger_scrape(region: str, role: str, db: Session = Depends(get_db)):
                 url=job_data["url"],
                 source=job_data["source"],
                 raw_text=job_data.get("description"),
-                parsed_data=parsed_data,
+                parsed_json=parsed_data,  # Fixed: use parsed_json
                 match_score=match_score,
                 is_scam=False
             )
