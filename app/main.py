@@ -33,14 +33,29 @@ app = FastAPI(
 
 # Set all CORS enabled origins
 cors_origins = settings.get_cors_origins()
-if cors_origins:
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=cors_origins,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+
+# Add default CORS origins if none configured
+if not cors_origins:
+    cors_origins = [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "https://*.vercel.app",  # Allow all Vercel deployments
+        "*://career-agent-*.vercel.app",  # Specific pattern for this project
+    ]
+    print(f"[CORS] Using default origins: {cors_origins}")
+else:
+    print(f"[CORS] Using configured origins: {cors_origins}")
+
+# Configure CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=cors_origins if cors_origins != ["*"] else ["*"],
+    allow_origin_regex=r"https://.*\.vercel\.app",  # Allow all Vercel domains
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["*"],
+)
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
