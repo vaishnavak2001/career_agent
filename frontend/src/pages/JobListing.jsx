@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import Layout from '../components/Layout';
 import JobCard from '../components/JobCard';
 import Filters from '../components/Filters';
@@ -14,8 +16,12 @@ const JobListing = () => {
         fullTime: false,
         minMatchScore: 70
     });
-    const [selectedJob, setSelectedJob] = useState(null);
     const [sortBy, setSortBy] = useState('match_score');
+    const [page, setPage] = useState(1);
+    const [totalJobs, setTotalJobs] = useState(0);
+    const navigate = useNavigate();
+
+    const PAGE_SIZE = 20;
 
     const loadJobs = useCallback(async (shouldScrape = false) => {
         try {
@@ -25,19 +31,37 @@ const JobListing = () => {
                 try {
                     // Trigger scrape first
                     await api.triggerScrape(filters.location, filters.keyword);
+                    toast.success('Scraping started...');
                 } catch (err) {
                     console.error("Scraping failed, fetching existing jobs:", err);
+                    toast.warning('Scraping failed, showing existing jobs');
                 }
             }
 
-            const response = await api.getJobs(filters);
-            setJobs(response.data || response); // Handle if response is array or object with data
+            const response = await api.getJobs({
+                ...filters,
+                skip: (page - 1) * PAGE_SIZE,
+                limit: PAGE_SIZE
+            });
+
+            // Handle different response formats
+            if (response.data && Array.isArray(response.data)) {
+                setJobs(response.data);
+                setTotalJobs(response.total || response.data.length);
+            } else if (Array.isArray(response)) {
+                setJobs(response);
+                setTotalJobs(response.length);
+            } else {
+                setJobs([]);
+                setTotalJobs(0);
+            }
         } catch (error) {
             console.error('Error loading jobs:', error);
+            toast.error('Failed to load jobs');
         } finally {
             setLoading(false);
         }
-    }, [filters]);
+    }, [filters, page]);
 
     useEffect(() => {
         loadJobs();
@@ -46,9 +70,10 @@ const JobListing = () => {
     const handleApply = async (jobId) => {
         try {
             await api.applyToJob(jobId);
-            alert('Application submitted!');
+            toast.success('Application submitted!');
         } catch (error) {
             console.error('Error applying:', error);
+            toast.error('Failed to apply to job');
         }
     };
 
@@ -145,11 +170,69 @@ const JobListing = () => {
                                     <JobCard
                                         key={job.id}
                                         job={job}
-                                        onClick={() => setSelectedJob(job)}
+                                        onClick={() => navigate(`/jobs/${job.id}`)}
                                         onApply={() => handleApply(job.id)}
-                                        isSelected={selectedJob?.id === job.id}
+                                        isSelected={false}
                                     />
                                 ))}
+                            </div>
+                        )}
+
+                        {/* Pagination */}
+                        {!loading && sortedJobs.length > 0 && (
+                            <div className="mt-8 flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 rounded-lg">
+                                <div className="flex flex-1 justify-between sm:hidden">
+                                    <button
+                                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                                        disabled={page === 1}
+                                        className={`relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium ${page === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-50'}`}
+                                    >
+                                        Previous
+                                    </button>
+                                    <button
+                                        onClick={() => setPage(p => p + 1)}
+                                        disabled={jobs.length < PAGE_SIZE}
+                                        className={`relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium ${jobs.length < PAGE_SIZE ? 'text-gray-300 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-50'}`}
+                                    >
+                                        Next
+                                    </button>
+                                </div>
+                                <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                                    <div>
+                                        <p className="text-sm text-gray-700">
+                                            Showing <span className="font-medium">{(page - 1) * PAGE_SIZE + 1}</span> to{' '}
+                                            <span className="font-medium">{Math.min(page * PAGE_SIZE, totalJobs)}</span> of{' '}
+                                            <span className="font-medium">{totalJobs}</span> results
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                                            <button
+                                                onClick={() => setPage(p => Math.max(1, p - 1))}
+                                                disabled={page === 1}
+                                                className={`relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 ${page === 1 ? 'cursor-not-allowed' : 'hover:bg-gray-50 focus:z-20'}`}
+                                            >
+                                                <span className="sr-only">Previous</span>
+                                                <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                    <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
+                                                </svg>
+                                            </button>
+                                            <span className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300">
+                                                Page {page}
+                                            </span>
+                                            <button
+                                                onClick={() => setPage(p => p + 1)}
+                                                disabled={jobs.length < PAGE_SIZE}
+                                                className={`relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 ${jobs.length < PAGE_SIZE ? 'cursor-not-allowed' : 'hover:bg-gray-50 focus:z-20'}`}
+                                            >
+                                                <span className="sr-only">Next</span>
+                                                <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                    <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+                                                </svg>
+                                            </button>
+                                        </nav>
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>

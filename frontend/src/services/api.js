@@ -62,6 +62,14 @@ const api = {
         return response.json();
     },
 
+    getJobById: async (jobId) => {
+        const response = await fetch(`${BASE_URL}/jobs/${jobId}`, {
+            headers: getAuthHeaders()
+        });
+        if (!response.ok) throw new Error('Failed to fetch job details');
+        return response.json();
+    },
+
     triggerScrape: async (region, role) => {
         const params = new URLSearchParams({ region, role });
         const response = await fetch(`${BASE_URL}/jobs/scrape?${params.toString()}`, {
@@ -82,6 +90,14 @@ const api = {
         return response.json();
     },
 
+    getApplications: async () => {
+        const response = await fetch(`${BASE_URL}/applications/`, {
+            headers: getAuthHeaders()
+        });
+        if (!response.ok) throw new Error('Failed to fetch applications');
+        return response.json();
+    },
+
     // Resumes
     uploadResume: async (file) => {
         const formData = new FormData();
@@ -93,6 +109,35 @@ const api = {
             body: formData
         });
         if (!response.ok) throw new Error('Failed to upload resume');
+        return response.json();
+    },
+
+    getResumes: async () => {
+        const response = await fetch(`${BASE_URL}/resumes/`, {
+            headers: getAuthHeaders()
+        });
+        if (!response.ok) throw new Error('Failed to fetch resumes');
+        return response.json();
+    },
+
+    getResumePreview: async (resumeId) => {
+        const response = await fetch(`${BASE_URL}/resumes/${resumeId}/preview`, {
+            headers: getAuthHeaders()
+        });
+        if (!response.ok) throw new Error('Failed to fetch resume preview');
+        return response.json();
+    },
+
+    enhanceResume: async (resumeId, jobId) => {
+        const response = await fetch(`${BASE_URL}/resumes/${resumeId}/enhance`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...getAuthHeaders()
+            },
+            body: JSON.stringify({ job_id: jobId })
+        });
+        if (!response.ok) throw new Error('Failed to enhance resume');
         return response.json();
     },
 
@@ -120,6 +165,20 @@ const api = {
             body: JSON.stringify({ job_title: jobTitle, question, answer })
         });
         if (!response.ok) throw new Error('Failed to get feedback');
+        return response.json();
+    },
+
+    // Cover Letters
+    generateCoverLetter: async (jobId, resumeId) => {
+        const response = await fetch(`${BASE_URL}/cover-letters/generate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...getAuthHeaders()
+            },
+            body: JSON.stringify({ job_id: jobId, resume_id: resumeId })
+        });
+        if (!response.ok) throw new Error('Failed to generate cover letter');
         return response.json();
     },
 

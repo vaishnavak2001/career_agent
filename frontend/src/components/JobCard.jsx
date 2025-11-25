@@ -20,17 +20,17 @@ const JobCard = ({ job, onClick, onApply, isSelected }) => {
 
     return (
         <div
-            className={`bg-white border rounded-lg p-5 hover:shadow-md transition-shadow cursor-pointer ${isSelected ? 'border-blue-500 shadow-md' : 'border-gray-200'
+            className={`glass card-hover border rounded-lg p-5 cursor-pointer animate-fade-in ${isSelected ? 'border-blue-500 dark:border-blue-400 shadow-md' : 'border-gray-200 dark:border-gray-700'
                 }`}
             onClick={onClick}
         >
             <div className="flex justify-between items-start">
                 <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900 hover:text-blue-600 mb-1">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 mb-1 transition-colors">
                         {job.title}
                     </h3>
-                    <p className="text-gray-700 font-medium mb-2">{job.company}</p>
-                    <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
+                    <p className="text-gray-700 dark:text-gray-300 font-medium mb-2">{job.company}</p>
+                    <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-3">
                         <span className="flex items-center">
                             <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -81,8 +81,8 @@ const JobCard = ({ job, onClick, onApply, isSelected }) => {
                         }}
                         disabled={job.is_scam}
                         className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${job.is_scam
-                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                : 'bg-blue-600 text-white hover:bg-blue-700'
+                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                            : 'bg-blue-600 text-white hover:bg-blue-700'
                             }`}
                     >
                         {job.is_scam ? 'Flagged' : 'Apply'}

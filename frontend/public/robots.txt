@@ -1,0 +1,14 @@
+# Allow all crawlers
+User-agent: *
+Allow: /
+
+# Disallow authentication pages
+Disallow: /login
+Disallow: /register
+
+# Allow job listing pages
+Allow: /
+Allow: /jobs/*
+
+# Sitemap (update with your actual domain when deployed)
+Sitemap: https://your-domain.com/sitemap.xml
