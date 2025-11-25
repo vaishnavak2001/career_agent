@@ -31,11 +31,10 @@ const Layout = ({ children }) => {
                     <div className="flex justify-between h-16">
                         <div className="flex">
                             <div className="flex-shrink-0 flex items-center">
-                                {/* Logo with gradient */}
+                                {/* Logo - Solid Color Fallback */}
                                 <Link
                                     to="/"
-                                    className="text-2xl font-bold gradient-primary text-transparent tracking-tight hover-scale"
-                                    style={{ WebkitBackgroundClip: 'text', backgroundClip: 'text' }}
+                                    className="text-2xl font-bold text-blue-600 dark:text-blue-400 tracking-tight hover-scale"
                                 >
                                     CareerAgent
                                 </Link>
