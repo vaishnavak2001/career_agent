@@ -34,18 +34,19 @@ if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
     print("[DB] Fixed postgres:// -> postgresql://")
 
 # Fix for Render/Supabase IPv6 issues: Force IPv4 resolution
-if "sqlite" not in SQLALCHEMY_DATABASE_URL.lower():
-    try:
-        parsed = urlparse(SQLALCHEMY_DATABASE_URL)
-        if parsed.hostname:
-            # Resolve hostname to IPv4 address
-            ipv4_address = socket.gethostbyname(parsed.hostname)
-            new_netloc = parsed.netloc.replace(parsed.hostname, ipv4_address)
-            parsed = parsed._replace(netloc=new_netloc)
-            SQLALCHEMY_DATABASE_URL = urlunparse(parsed)
-            print(f"[DB] Resolved {parsed.hostname} -> {ipv4_address} (IPv4)")
-    except Exception as e:
-        print(f"[DB] IPv4 resolution failed: {e}. Using original URL.")
+# IPv4 resolution logic removed to prevent startup hangs and SNI issues with Supabase poolers
+# if "sqlite" not in SQLALCHEMY_DATABASE_URL.lower():
+#     try:
+#         parsed = urlparse(SQLALCHEMY_DATABASE_URL)
+#         if parsed.hostname:
+#             # Resolve hostname to IPv4 address
+#             ipv4_address = socket.gethostbyname(parsed.hostname)
+#             new_netloc = parsed.netloc.replace(parsed.hostname, ipv4_address)
+#             parsed = parsed._replace(netloc=new_netloc)
+#             SQLALCHEMY_DATABASE_URL = urlunparse(parsed)
+#             print(f"[DB] Resolved {parsed.hostname} -> {ipv4_address} (IPv4)")
+#     except Exception as e:
+#         print(f"[DB] IPv4 resolution failed: {e}. Using original URL.")
 
 # Determine if using SQLite
 is_sqlite = "sqlite" in SQLALCHEMY_DATABASE_URL.lower()
