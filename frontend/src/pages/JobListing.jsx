@@ -156,13 +156,21 @@ const JobListing = () => {
                             </div>
                         ) : sortedJobs.length === 0 ? (
                             <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
-                                <p className="text-gray-500 mb-4">No jobs found matching your criteria.</p>
-                                <button
-                                    onClick={() => setFilters({ keyword: '', location: '', remote: false, fullTime: false, minMatchScore: 70 })}
-                                    className="text-blue-600 hover:underline"
-                                >
-                                    Clear filters
-                                </button>
+                                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                                <h3 className="mt-2 text-sm font-medium text-gray-900">No jobs found</h3>
+                                <p className="mt-1 text-sm text-gray-500">
+                                    Try adjusting your search or filters to find what you're looking for.
+                                </p>
+                                <div className="mt-6">
+                                    <button
+                                        onClick={() => setFilters({ keyword: '', location: '', remote: false, fullTime: false, minMatchScore: 70 })}
+                                        className="text-blue-600 hover:underline"
+                                    >
+                                        Clear filters
+                                    </button>
+                                </div>
                             </div>
                         ) : (
                             <div className="space-y-3">

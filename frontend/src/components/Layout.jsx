@@ -32,7 +32,11 @@ const Layout = ({ children }) => {
                         <div className="flex">
                             <div className="flex-shrink-0 flex items-center">
                                 {/* Logo with gradient */}
-                                <Link to="/" className="text-2xl font-bold gradient-primary bg-clip-text text-transparent tracking-tight hover-scale">
+                                <Link
+                                    to="/"
+                                    className="text-2xl font-bold gradient-primary text-transparent tracking-tight hover-scale"
+                                    style={{ WebkitBackgroundClip: 'text', backgroundClip: 'text' }}
+                                >
                                     CareerAgent
                                 </Link>
                             </div>
