@@ -22,9 +22,11 @@ FROM python:3.11-slim
 # Set working directory
 WORKDIR /app
 
-# Install runtime dependencies
+# Install runtime dependencies and Playwright dependencies
 RUN apt-get update && apt-get install -y \
     libpq5 \
+    wget \
+    gnupg \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy Python dependencies from builder
@@ -33,9 +35,14 @@ COPY --from=builder /root/.local /root/.local
 # Make sure scripts in .local are usable
 ENV PATH=/root/.local/bin:$PATH
 
+# Install Playwright Browsers (Chromium only to save space)
+RUN playwright install --with-deps chromium
+
 # Copy application code
 COPY app ./app
-COPY .env .env
+# Note: .env is usually not copied in Docker for security, but passed as env vars. 
+# However, if you rely on it existing:
+# COPY .env .env 
 
 # Expose port
 EXPOSE 8000

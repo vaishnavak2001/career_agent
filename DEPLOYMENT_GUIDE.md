@@ -1,66 +1,125 @@
-# 🚀 Deployment & Verification Guide
+# 🚀 CareerAgent Deployment Guide
 
-## 1. Environment Setup
+This guide details how to deploy the CareerAgent frontend application to production.
 
-### Backend (Render)
-1. Go to your Render Dashboard.
-2. Select your `career-agent` service.
-3. Go to **Environment**.
-4. Add the following environment variables (values from `.env.production.example`):
-   - `DATABASE_URL`: (Automatically set by Render if you use their Postgres)
-   - `SECRET_KEY`: Generate a strong random string.
-   - `ACCESS_TOKEN_EXPIRE_MINUTES`: `10080`
-   - `BACKEND_CORS_ORIGINS`: `https://your-frontend.vercel.app,http://localhost:5173`
-   - `OPENAI_API_KEY`: Your OpenAI Key.
-   - `ADZUNA_API_ID`: Your Adzuna ID.
-   - `ADZUNA_API_KEY`: Your Adzuna Key.
-   - `GOOGLE_CLIENT_ID`: Your Google OAuth Client ID.
-   - `GOOGLE_CLIENT_SECRET`: Your Google OAuth Client Secret.
-   - `GOOGLE_REDIRECT_URI`: `https://your-backend.onrender.com/api/v1/auth/callback/google`
-   - `LINKEDIN_CLIENT_ID`: Your LinkedIn Client ID.
-   - `LINKEDIN_CLIENT_SECRET`: Your LinkedIn Client Secret.
-   - `LINKEDIN_REDIRECT_URI`: `https://your-backend.onrender.com/api/v1/auth/callback/linkedin`
+## 📋 Prerequisites
 
-### Frontend (Vercel)
-1. Go to your Vercel Dashboard.
-2. Select your project.
-3. Go to **Settings > Environment Variables**.
-4. Add:
-   - `VITE_API_URL`: `https://your-backend.onrender.com/api/v1`
+- **Node.js**: Version 20 or higher recommended.
+- **Git**: For version control.
+- **Backend API**: A running instance of the CareerAgent backend (FastAPI).
 
-## 2. Verification Steps
+## 🏗️ Build Process
 
-### Step 1: Verify Backend Health
-Visit `https://your-backend.onrender.com/health`.
-- **Expected:** `{"status": "healthy", "service": "Career Agent API"}`
+The application is built using Vite, which produces a highly optimized static asset bundle.
 
-### Step 2: Test Authentication
-1. Open your frontend URL.
-2. Go to the Login page.
-3. Try to **Register** a new user.
-4. Try to **Login** with the new user.
-5. **Expected:** Successful login and redirection to Dashboard.
+1.  **Install Dependencies:**
+    ```bash
+    cd frontend
+    npm install
+    ```
 
-### Step 3: Test OAuth (Google/LinkedIn)
-1. On the Login page, click "Login with Google".
-2. **Expected:** Redirect to Google -> Login -> Redirect back to App -> Logged in.
+2.  **Run Production Build:**
+    ```bash
+    npm run build
+    ```
 
-### Step 4: Test Job Scraper
-1. Go to the **Jobs** tab.
-2. Click "Scrape Jobs" (or similar button).
-3. **Expected:** A toast notification saying scraping started, and jobs appearing after a few seconds.
+    **Output:**
+    The build artifacts will be generated in the `frontend/dist` directory.
+    - `index.html`: Entry point.
+    - `assets/`: CSS and JavaScript chunks (code-split).
+    - `sw.js`: Service Worker for PWA functionality.
+    - `manifest.webmanifest`: PWA manifest.
 
-### Step 5: Test Interview Prep
-1. Go to **Interview Prep** (if UI is built) or use Postman.
-2. Send a POST to `/api/v1/interview/questions` with job details.
-3. **Expected:** JSON response with interview questions.
+3.  **Preview Build (Optional):**
+    To test the production build locally:
+    ```bash
+    npm run preview
+    ```
 
-## 3. Troubleshooting
+## 🌍 Environment Variables
 
-- **CORS Errors:** Check `BACKEND_CORS_ORIGINS` in Render. Ensure no trailing slashes.
-- **Database Errors:** Check `DATABASE_URL` and ensure the database is active.
-- **Auth Errors:** Check `SECRET_KEY` and OAuth credentials.
-- **Import Errors:** Check build logs in Render for any missing dependencies.
+You must configure the backend API URL.
+
+**Local Development (`.env`):**
+```env
+VITE_API_URL=http://localhost:8000
+```
+
+**Production:**
+Set `VITE_API_URL` in your hosting provider's environment variable settings to point to your live backend (e.g., `https://api.careeragent.com`).
 
 ---
-**Status:** ✅ Code pushed to GitHub. CI/CD pipeline should be running.
+
+## ☁️ Deployment Options
+
+### Option 1: Vercel (Recommended)
+
+Vercel is the creators of Next.js and provides excellent support for Vite apps.
+
+1.  **Install Vercel CLI:**
+    ```bash
+    npm install -g vercel
+    ```
+
+2.  **Deploy:**
+    Run the following command from the `frontend` directory:
+    ```bash
+    vercel --prod
+    ```
+    Follow the prompts.
+
+3.  **Configure Environment:**
+    Go to the Vercel Dashboard -> Settings -> Environment Variables and add `VITE_API_URL`.
+
+### Option 2: Netlify
+
+1.  **Install Netlify CLI:**
+    ```bash
+    npm install -g netlify-cli
+    ```
+
+2.  **Deploy:**
+    ```bash
+    netlify deploy --prod
+    ```
+    Set the publish directory to `dist`.
+
+### Option 3: Docker / Nginx
+
+You can serve the static files using Nginx.
+
+**Dockerfile:**
+```dockerfile
+# Build Stage
+FROM node:20-alpine as build
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+
+# Production Stage
+FROM nginx:alpine
+COPY --from=build /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+**Nginx Config (`nginx.conf`):**
+```nginx
+server {
+    listen 80;
+    location / {
+        root /usr/share/nginx/html;
+        index index.html index.htm;
+        try_files $uri $uri/ /index.html; # Important for React Router
+    }
+}
+```
+
+## ✅ Post-Deployment Verification
+
+1.  **PWA Check:** Open the site on a mobile device or Chrome. You should see an "Install" icon.
+2.  **Offline Mode:** Turn off network and refresh. The app should still load (cached by Service Worker).
+3.  **API Connection:** Try logging in. If it fails, check the Network tab to ensure requests are going to the correct `VITE_API_URL`.
