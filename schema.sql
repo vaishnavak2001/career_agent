@@ -2,6 +2,30 @@
 -- Career Agent - Complete PostgreSQL Schema
 -- =====================================================
 
+-- ⚠️ CLEAN SLATE: Drop existing objects to avoid conflicts
+DROP VIEW IF EXISTS v_application_funnel CASCADE;
+DROP VIEW IF EXISTS v_high_match_jobs CASCADE;
+DROP TABLE IF EXISTS 
+    webhook_events, 
+    notifications, 
+    audit_logs, 
+    skill_demand, 
+    daily_metrics, 
+    monitoring_configs, 
+    applications, 
+    cover_letters, 
+    projects, 
+    match_scores, 
+    jobs, 
+    resumes, 
+    users 
+CASCADE;
+DROP FUNCTION IF EXISTS update_updated_at_column CASCADE;
+
+-- =====================================================
+-- EXTENSIONS
+-- =====================================================
+
 -- Enable extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
