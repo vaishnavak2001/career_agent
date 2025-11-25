@@ -6,7 +6,13 @@ from passlib.context import CryptContext
 from app.core.config import settings
 
 # Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Updated config to avoid bcrypt version compatibility issues
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto",
+    bcrypt__rounds=12,
+    bcrypt__ident="2b"  # Use standard bcrypt identifier
+)
 
 # JWT settings
 SECRET_KEY = settings.SECRET_KEY or "your-secret-key-change-in-production"
@@ -16,11 +22,21 @@ ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against its hash."""
+    # Truncate to 72 bytes for bcrypt compatibility
+    if len(plain_password.encode('utf-8')) > 72:
+        plain_password = plain_password.encode('utf-8')[:72].decode('utf-8', errors='ignore')
     return pwd_context.verify(plain_password, hashed_password)
 
 
 def get_password_hash(password: str) -> str:
-    """Hash a password."""
+    """Hash a password.
+    
+    Note: bcrypt has a maximum password length of 72 bytes.
+    Longer passwords are truncated to prevent errors.
+    """
+    # Truncate password to 72 bytes maximum (bcrypt limitation)
+    if len(password.encode('utf-8')) > 72:
+        password = password.encode('utf-8')[:72].decode('utf-8', errors='ignore')
     return pwd_context.hash(password)
 
 

@@ -47,7 +47,8 @@ class Job(Base):
     parsed_data = Column(JSON)
     match_score = Column(Integer)
     is_scam = Column(Boolean, default=False)
-    scam_reason = Column(Text)
+    scam_score = Column(Integer)  # Scam probability score (0-100)
+    scam_flags = Column(JSON, default=list)  # List of scam indicators detected
     scraped_at = Column(DateTime, default=datetime.utcnow)
 
     applications = relationship("Application", back_populates="job")
