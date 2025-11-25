@@ -54,7 +54,8 @@ const Dashboard = () => {
             await api.triggerScrape('San Francisco', 'Python Developer');
             alert('Scraping started! Refresh the feed in a moment.');
             fetchStats();
-        } catch (e) {
+        } catch (error) {
+            console.error('Scraping error:', error);
             alert('Failed to start scraping');
         } finally {
             setScraping(false);

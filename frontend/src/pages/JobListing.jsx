@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Layout from '../components/Layout';
 import JobCard from '../components/JobCard';
 import Filters from '../components/Filters';
@@ -17,11 +17,7 @@ const JobListing = () => {
     const [selectedJob, setSelectedJob] = useState(null);
     const [sortBy, setSortBy] = useState('match_score');
 
-    useEffect(() => {
-        loadJobs();
-    }, [filters]);
-
-    const loadJobs = async (shouldScrape = false) => {
+    const loadJobs = useCallback(async (shouldScrape = false) => {
         try {
             setLoading(true);
 
@@ -41,7 +37,11 @@ const JobListing = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [filters]);
+
+    useEffect(() => {
+        loadJobs();
+    }, [loadJobs]);
 
     const handleApply = async (jobId) => {
         try {
